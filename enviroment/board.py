@@ -1,0 +1,218 @@
+import random
+import numpy as np
+from enviroment import deque
+
+
+class Board:
+    """
+    Board class representing the game environment.
+    Manages the snake, apples, and game rules.
+    """
+    UP = 0
+    RIGHT = 1
+    DOWN = 2
+    LEFT = 3
+
+    EMPTY = 0
+    SNAKE_HEAD = 1
+    SNAKE_BODY = 2
+    GREEN_APPLE = 3
+    RED_APPLE = 4
+    WALL = 5
+
+    CELL_REPRO = {
+        EMPTY: "0",
+        SNAKE_HEAD: "H",
+        SNAKE_BODY: "S",
+        GREEN_APPLE: "G",
+        RED_APPLE: "R",
+        WALL: "W"
+    }
+
+    def __init__(self, size=10, logger=None):
+        """
+        Initialize the board with a given size and logger.
+
+        Args:
+            size: Size of the board (number of cells in one dimension)
+            logger: Logger instance for logging events
+        """
+        self.size = size
+        self.logger = logger
+        self.grid = np.zeros((size, size), dtype=int)
+        self.snake = deque()
+        self.green_apples = []
+        self.red_apples = []
+        self.direction = None
+        self.snake_length = 0
+        self.game_over = False
+        self.reset()
+
+    def reset(self):
+        """
+        Reset the board to its initial state.
+        """
+        self.grid.fill(self.EMPTY)
+        self.snake.clear()
+        self.green_apples.clear()
+        self.red_apples.clear()
+
+        start_x = random.randint(3, self.size - 4)
+        start_y = random.randint(3, self.size - 4)
+
+        self.direction = random.choice([self.UP, self.RIGHT,
+                                        self.DOWN, self.LEFT])
+        if self.direction == self.UP:
+            positions = [(start_x, start_y), (start_x, start_y + 1),
+                         (start_x, start_y + 2)]
+        elif self.direction == self.RIGHT:
+            positions = [(start_x, start_y), (start_x - 1, start_y),
+                         (start_x - 2, start_y)]
+        elif self.direction == self.DOWN:
+            positions = [(start_x, start_y), (start_x, start_y - 1),
+                         (start_x, start_y - 2)]
+        else:
+            positions = [(start_x, start_y), (start_x + 1, start_y),
+                         (start_x + 2, start_y)]
+
+        for i, (x, y) in enumerate(positions):
+            self.snake.append((x, y))
+            if i == 0:
+                self.grid[x, y] = self.SNAKE_HEAD
+            else:
+                self.grid[x, y] = self.SNAKE_BODY
+
+        self.snake_length = len(self.snake)
+        self._place_apples(self.GREEN_APPLE, 2)
+        self._place_apples(self.RED_APPLE, 1)
+        self.game_over = False
+
+    def _place_apples(self, apple_type, count):
+        """
+        Place apples on the board.
+
+        Args:
+            apple_type: Type of apple to place (GREEN_APPLE or RED_APPLE)
+            count: Number of apples to place
+        """
+        apple_placed = 0
+        while apple_placed < count:
+            x = random.randint(0, self.size - 1)
+            y = random.randint(0, self.size - 1)
+            if self.grid[x, y] == self.EMPTY:
+                self.grid[x, y] = apple_type
+                if apple_type == self.GREEN_APPLE:
+                    self.green_apples.append((x, y))
+                else:
+                    self.red_apples.append((x, y))
+                apple_placed += 1
+
+    def _get_next_head_position(self, action):
+        """
+        Get the next position of the snake head based on the action.
+        """
+        head_x, head_y = self.snake[0]
+
+        if action == self.UP:
+            return (head_x, head_y - 1)
+        elif action == self.RIGHT:
+            return (head_x + 1, head_y)
+        elif action == self.DOWN:
+            return (head_x, head_y + 1)
+        else:
+            return (head_x - 1, head_y)
+
+    def step(self, action):
+        """
+        Take a step in the environment based on the given action.
+        Returns reward, done, info
+        """
+        if self.game_over:
+            return 0, True, {"reason": "Game Over"}
+
+        next_x, next_y = self._get_next_head_position(action)
+        self.direction = action
+
+        if not (0 <= next_x < self.size and 0 <= next_y < self.size):
+            self.game_over = True
+            return -100, True, {"reason": "Hit the wall"}
+
+        if self.grid[next_x, next_y] == self.SNAKE_BODY:
+            self.game_over = True
+            return -100, True, {"reason": "Hit self"}
+
+        self.snake.appendleft((next_x, next_y))
+        old_head_x, old_head_y = self.snake[1]
+        self.grid[old_head_x, old_head_y] = self.SNAKE_BODY
+
+        if self.grid[next_x, next_y] == self.GREEN_APPLE:
+            self.snake_length += 1
+            self.green_apples.remove((next_x, next_y))
+            self._place_apples(self.GREEN_APPLE, 1)
+            self.grid[next_x, next_y] = self.SNAKE_HEAD
+            return 10, False, {"reason": "Ate green apple"}
+        elif self.grid[next_x, next_y] == self.RED_APPLE:
+            self.snake_length -= 1
+            self.red_apples.remove((next_x, next_y))
+            self._place_apples(self.RED_APPLE, 1)
+            self.grid[next_x, next_y] = self.SNAKE_HEAD
+            if self.snake_length > 0:
+                last_x, last_y = self.snake.pop()
+                self.grid[last_x, last_y] = self.EMPTY
+            else:
+                self.game_over = True
+                return -100, True, {"reason": "Leng zero"}
+            return -30, False, {"reason": "Ate red apple"}
+        else:
+            self.grid[next_x, next_y] = self.SNAKE_HEAD
+            last_x, last_y = self.snake.pop()
+            self.grid[last_x, last_y] = self.EMPTY
+            return -1, False, {"reason": "Moved"}
+
+    def get_snake_vision(self):
+        """
+        Get the snake's vision in all four directions.
+        The snake can only see in the 4 directions from its head.0.
+        """
+        head_x, head_y = self.snake[0]
+        vision = {}
+        vision["up"] = self._look_in_direction(head_x, head_y, 0, -1)
+        vision["right"] = self._look_in_direction(head_x, head_y, 1, 0)
+        vision["down"] = self._look_in_direction(head_x, head_y, 0, 1)
+        vision["left"] = self._look_in_direction(head_x, head_y, -1, 0)
+
+        if self.logger:
+            self.logger.log(f"Vision: {vision}")
+        return vision
+
+    def _look_in_direction(self, start_x, start_y, dx, dy):
+        """
+        Look in a specific direction from the snake's head.
+        Returns a list of cell types seen.
+        """
+        x, y = start_x, start_y
+        vision = []
+
+        while True:
+            x += dx
+            y += dy
+
+            if not (0 <= x < self.size and 0 <= y < self.size):
+                vision.append(self.WALL)
+                break
+
+            vision.append(self.grid[x, y])
+            if self.grid[x, y] != self.EMPTY:
+                break
+        return vision
+
+    def __str__(self):
+        """
+        Return a string representation of the board for terminal display.
+        """
+        result = ""
+        for i in range(self.size):
+            for j in range(self.size):
+                result += self.CELL_REPRO[self.grid[i, j]]
+            result += "\n"
+        return result
