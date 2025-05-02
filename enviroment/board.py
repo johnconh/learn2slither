@@ -1,6 +1,6 @@
 import random
 import numpy as np
-from enviroment import deque
+from collections import deque
 
 
 class Board:
@@ -213,6 +213,6 @@ class Board:
         result = ""
         for i in range(self.size):
             for j in range(self.size):
-                result += self.CELL_REPRO[self.grid[i, j]]
+                result += self.CELL_REPRO[self.grid[i, j]] + ""
             result += "\n"
         return result
