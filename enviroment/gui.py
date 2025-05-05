@@ -13,6 +13,7 @@ class GUI:
     GREEN = (0, 255, 0)
     RED = (255, 0, 0)
     BLUE = (0, 0, 255)
+    BLUE_LIGHT = (173, 216, 230)
     GRAY = (200, 200, 200)
 
     def __init__(self, board, speed=100, cell_size=40):
@@ -61,7 +62,7 @@ class GUI:
                 cell_value = self.board.grid[x, y]
 
                 if cell_value == self.board.SNAKE_HEAD:
-                    self._draw_cell(x, y, self.BLUE)
+                    self._draw_cell(x, y, self.BLUE_LIGHT)
                 elif cell_value == self.board.SNAKE_BODY:
                     self._draw_cell(x, y, self.BLUE)
                 elif cell_value == self.board.GREEN_APPLE:

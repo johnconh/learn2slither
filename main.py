@@ -84,11 +84,10 @@ def main():
     board_size = args.board_size
     board = Board(board_size, logger)
     agent = QAgent(board_size, logger)
-
     if args.load:
         if os.path.exists(args.load):
             logger.log(f"Loading model from {args.load}")
-            agent.load(args.load)
+            agent.load_model(args.load)
         else:
             logger.log(f"Error: Model file {args.load} not found")
             return
@@ -97,8 +96,50 @@ def main():
     if args.visual == "on":
         gui = GUI(board, args.speed)
 
-        while True:
-            gui.update()
+    max_lenth = 0
+    max_steps = 0
+    for session in range(args.sessions):
+        board.reset()
+        done = False
+        steps = 0
+
+        while not done:
+            state = board.get_snake_vision()
+            current_dir = board.direction
+            action = agent.choose_action(state, current_dir)
+            reward, done, info = board.step(action)
+            next_state = board.get_snake_vision()
+            board.print_snake_vision_grid()
+            if not args.dontlearn:
+                agent.update(state, action, reward, next_state, done)
+
+            if gui:
+                gui.update()
+                if args.step_by_step:
+                    gui.wait_for_key()
+            steps += 1
+            if board.snake_length > max_lenth:
+                max_lenth = board.snake_length
+    
+            if args.visual.lower() == "off":
+                logger.log(f"Action: {action}")
+                logger.log(f"Reward: {reward}")
+                logger.log(f"Info: {info}")
+
+        if steps > max_steps:
+            max_steps = steps
+
+        logger.log(f"Session {session+1}/{args.sessions} - "
+                   f"Length: {board.snake_length}, Steps: {steps}")
+
+    if args.save and not args.dontlearn:
+        save_dir = os.path.dirname(args.save)
+        if not os.path.exists(save_dir):
+            os.makedirs(save_dir)
+        agent.save_model(args.save)
+        logger.log(f"Save learning state in {args.save}")
+
+    logger.log(f"GAME OVER , max length: {max_lenth}, max steps: {max_steps}")
 
 
 if __name__ == "__main__":

@@ -162,12 +162,12 @@ class Board:
             else:
                 self.game_over = True
                 return -100, True, {"reason": "Leng zero"}
-            return -30, False, {"reason": "Ate red apple"}
+            return -8, False, {"reason": "Ate red apple"}
         else:
             self.grid[next_x, next_y] = self.SNAKE_HEAD
             last_x, last_y = self.snake.pop()
             self.grid[last_x, last_y] = self.EMPTY
-            return -1, False, {"reason": "Moved"}
+            return 0, False, {"reason": "Moved"}
 
     def get_snake_vision(self):
         """
@@ -184,6 +184,39 @@ class Board:
         if self.logger:
             self.logger.log(f"Vision: {vision}")
         return vision
+
+    def print_snake_vision_grid(self):
+        """
+        Print the board showing only what the snake can see in the 4 directions from its head.
+        All other cells are hidden (printed as spaces).
+        """
+        vision = self.get_snake_vision()
+        head_x, head_y = self.snake[0]
+
+        vision_grid = [[" " for _ in range(self.size)] for _ in range(self.size)]
+
+        vision_grid[head_x][head_y] = "H"
+
+        def mark_vision(dx, dy, values):
+            x, y = head_x, head_y
+            for val in values:
+                x += dx
+                y += dy
+                if 0 <= x < self.size and 0 <= y < self.size:
+                    vision_grid[x][y] = self.CELL_REPRO[val]
+                else:
+                    prev_x, prev_y = x - dx, y - dy
+                    if 0 <= prev_x < self.size and 0 <= prev_y < self.size:
+                        vision_grid[prev_x][prev_y] = self.CELL_REPRO[self.WALL]
+
+        mark_vision(0, -1, vision["up"])
+        mark_vision(1, 0, vision["right"])
+        mark_vision(0, 1, vision["down"])
+        mark_vision(-1, 0, vision["left"])
+
+        for y in range(self.size):
+            row = "".join(vision_grid[x][y] for x in range(self.size))
+            print(row)
 
     def _look_in_direction(self, start_x, start_y, dx, dy):
         """
@@ -202,8 +235,6 @@ class Board:
                 break
 
             vision.append(self.grid[x, y])
-            if self.grid[x, y] != self.EMPTY:
-                break
         return vision
 
     def __str__(self):

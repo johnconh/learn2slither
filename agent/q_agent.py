@@ -14,10 +14,17 @@ class QAgent:
     DOWN = 2
     LEFT = 3
 
+    OP_ACT = {
+        UP: DOWN,
+        RIGHT: LEFT,
+        DOWN: UP,
+        LEFT: RIGHT
+    }
+
     def __init__(self, board_size=10, logger=None,
-                 learning_rate=0.1, discount_factor=0.9,
+                 learning_rate=0.1, discount_factor=0.95,
                  exploration_rate=1.0, exploration_decay=0.995,
-                 exploration_min=0.01):
+                 exploration_min=0.05):
         """
         Initialize the QAgent with given parameters.
 
@@ -34,6 +41,7 @@ class QAgent:
         self.exploration_rate = exploration_rate
         self.exploration_decay = exploration_decay
         self.exploration_min = exploration_min
+        self.logger = logger
 
         self.encoder = StateEncoder()
         self.q_table = {}
@@ -45,18 +53,26 @@ class QAgent:
         """
         return self.encoder.encode(state)
 
-    def _get_q_value(self, state_key, action):
+    def choose_action(self, state_key, current_direction):
         """
         Choose an action based on the current state.
         Uses epsilon-greedy strategy for exploration vs exploitation.
         """
         state_key = self._get_state_key(state_key)
 
-        if random.random < self.exploration_rate:
-            return random.randint(0, 3)
-        else:
+        valid_actions = [a for a in range(4) if a != self.OP_ACT[current_direction]]
+
+        if state_key not in self.q_table:
             self.q_table[state_key] = [0, 0, 0, 0]
-            return random.randint(0, 3)
+
+        if random.random() < self.exploration_rate:
+            return random.choice(valid_actions)
+        
+        q_values = self.q_table.get(state_key, {})
+        valid_q_values = [(action, q_values[action]) for action in valid_actions]
+        best_action = max(valid_q_values, key=lambda a: q_values[a])
+
+        return best_action
 
     def update(self, state, action, reward, next_state, done):
         """
@@ -72,8 +88,15 @@ class QAgent:
             self.q_table[next_state_key] = [0, 0, 0, 0]
 
         current_q = self.q_table[state_key][action]
-        max_next_q = max(self.q_table[next_state_key]) if not done else 0
 
+        if done:
+            max_next_q = 0
+        else:
+            next_direction = action
+            valid_next_actions = [a for a in range(4) if a != self.OP_ACT[next_direction]]
+            valid_next_q_values = [self.q_table[next_state_key][a] for a in valid_next_actions]
+            max_next_q = max(valid_next_q_values) if valid_next_q_values else 0
+        
         new_q = current_q + self.learning_rate * (
             reward + self.discount_factor * max_next_q - current_q
         )
