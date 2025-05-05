@@ -2,6 +2,7 @@ import pygame
 import time
 import sys
 
+
 class GUI:
     """
     GUI class for displaying the game.
@@ -17,7 +18,7 @@ class GUI:
     def __init__(self, board, speed=100, cell_size=40):
         """
         Initialize the GUI.
-        
+
         Args:
             board_size: Size of the board (number of cells).
             speed: Speed of the game (in milliseconds).
@@ -30,12 +31,13 @@ class GUI:
         self.window_width = self.board.size * self.cell_size
         self.window_height = self.board.size * self.cell_size
         pygame.init()
-        self.screen = pygame.display.set_mode((self.window_width, self.window_height), pygame.RESIZABLE)
+        self.screen = pygame.display.set_mode(
+            (self.window_width, self.window_height), pygame.RESIZABLE)
         pygame.display.set_caption("Learn2Slither")
 
         self.clock = pygame.time.Clock()
         self.font = pygame.font.SysFont(None, 36)
-    
+
     def update(self):
         """
         Update the display.
@@ -44,14 +46,16 @@ class GUI:
             if event.type == pygame.QUIT:
                 pygame.quit()
                 sys.exit()
-        
+
         self.screen.fill(self.GRAY)
 
         for x in range(0, self.window_width, self.cell_size):
-            pygame.draw.line(self.screen, self.BLACK, (x, 0), (x, self.window_height))
+            pygame.draw.line(self.screen, self.BLACK,
+                             (x, 0), (x, self.window_height))
         for y in range(0, self.window_height, self.cell_size):
-            pygame.draw.line(self.screen, self.BLACK, (0, y), (self.window_width, y))
-        
+            pygame.draw.line(self.screen, self.BLACK,
+                             (0, y), (self.window_width, y))
+
         for x in range(self.board.size):
             for y in range(self.board.size):
                 cell_value = self.board.grid[x, y]
@@ -67,6 +71,7 @@ class GUI:
         pygame.display.flip()
 
         self.clock.tick(1000/self.speed)
+
     def _draw_cell(self, x, y, color):
         """
         Draw a filled cell at the given position.
@@ -89,7 +94,7 @@ class GUI:
         )
         radius = self.cell_size // 2 - 2
         pygame.draw.circle(self.screen, color, center, radius)
-    
+
     def wait_for_key(self):
         """
         Wait for a key press or mouse click.
@@ -100,10 +105,11 @@ class GUI:
                 if event.type == pygame.QUIT:
                     pygame.quit()
                     sys.exit()
-                if event.type == pygame.KEYDOWN or event.type == pygame.MOUSEBUTTONDOWN:
+                if (event.type == pygame.KEYDOWN or
+                        event.type == pygame.MOUSEBUTTONDOWN):
                     waiting = False
             time.sleep(0.1)
-    
+
     def close(self):
         """
         Close the GUI.

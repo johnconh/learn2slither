@@ -12,14 +12,15 @@ class StateEncoder:
             max_vision_length: Maximum length of the vision for the snake
         """
         self.max_vision_length = max_vision_length
-    
+
     def encode(self, state):
         """
         Encode the state dictionary into a string key for the Q-table.
         Simplifies the vision to reduce the state space.
-        
+
         Format: "up_vision|right_vision|down_vision|left_vision"
-        Where each vision is encoded as a string of cell types, limited to max_vision_length.
+        Where each vision is encoded as a string of cell types,
+        limited to max_vision_length.
         """
 
         up_vision = self._encode_direction(state["up"])
@@ -36,7 +37,8 @@ class StateEncoder:
         Limits the vision to max_vision_length elements.
         """
 
-        limited_vision = vision_list[:min(len(vision_list), self.max_vision_length)]
+        limited_vision = vision_list[:min(len(vision_list),
+                                          self.max_vision_length)]
         return "_".join(map(str, limited_vision))
 
     def decode(self, state_key):

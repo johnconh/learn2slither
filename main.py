@@ -5,6 +5,7 @@ from enviroment.board import Board
 from enviroment.gui import GUI
 from agent.q_agent import QAgent
 
+
 def positive_int(value):
     """
     Custom type for positive integers.
@@ -14,6 +15,7 @@ def positive_int(value):
         raise argparse.ArgumentTypeError(f"{value} is not a positive integer")
     return ivalue
 
+
 def board_size_type(value):
     """
     Custom type for board size.
@@ -22,6 +24,7 @@ def board_size_type(value):
     if ivalue < 10 or ivalue > 42:
         raise argparse.ArgumentTypeError(f"{value} is not a valid board size")
     return ivalue
+
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Learn2Slither")

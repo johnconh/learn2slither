@@ -1,33 +1,32 @@
 import random
-import numpy as np
 import json
 import os
 from agent.state_encoder import StateEncoder
+
 
 class QAgent:
     """
     QAgent class representing a Q-learning agent for the game.
     Manages the Q-table and learning process.
     """
-
     UP = 0
     RIGHT = 1
     DOWN = 2
     LEFT = 3
 
     def __init__(self, board_size=10, logger=None,
-                 learning_rate=0.1, discount_factor=0.9, 
+                 learning_rate=0.1, discount_factor=0.9,
                  exploration_rate=1.0, exploration_decay=0.995,
                  exploration_min=0.01):
         """
         Initialize the QAgent with given parameters.
 
         Args:
-            board_size: Size of the board (number of cells in one dimension)
-            learning_rate: Learning rate for Q-learning
-            discount_factor: Discount factor for future rewards
-            exploration_rate: Initial exploration rate for epsilon-greedy policy
-            exploration_decay: Decay rate for exploration over time
+        board_size: Size of the board (number of cells in one dimension)
+        learning_rate: Learning rate for Q-learning
+        discount_factor: Discount factor for future rewards
+        exploration_rate: Initial exploration rate for epsilon-greedy policy
+        exploration_decay: Decay rate for exploration over time
         """
         self.board_size = board_size
         self.learning_rate = learning_rate
@@ -38,7 +37,7 @@ class QAgent:
 
         self.encoder = StateEncoder()
         self.q_table = {}
-    
+
     def _get_state_key(self, state):
         """
         Convert the state dictionary to a string key for the Q-table.
@@ -71,7 +70,7 @@ class QAgent:
             self.q_table[state_key] = [0, 0, 0, 0]
         if next_state_key not in self.q_table:
             self.q_table[next_state_key] = [0, 0, 0, 0]
-        
+
         current_q = self.q_table[state_key][action]
         max_next_q = max(self.q_table[next_state_key]) if not done else 0
 
@@ -82,7 +81,7 @@ class QAgent:
 
         if self.exploration_rate > self.exploration_min:
             self.exploration_rate *= self.exploration_decay
-    
+
     def save_model(self, filepath):
         """
         Save the Q-table and agent parameters to a file.
@@ -108,7 +107,7 @@ class QAgent:
             if self.logger:
                 self.logger.log(f"Model file {filepath} does not exist.")
             return False
-        
+
         try:
             with open(filepath, 'r') as f:
                 model_data = json.load(f)
@@ -118,19 +117,18 @@ class QAgent:
                 self.exploration_rate = model_data["exploration_rate"]
                 self.exploration_decay = model_data["exploration_decay"]
                 self.exploration_min = model_data["exploration_min"]
-                
                 load_board_size = model_data.get("board_size", 10)
                 if load_board_size != self.board_size:
                     if self.logger:
-                        self.logger.log(f"Warning: Loaded model has board size {load_board_size}, "
-                                  f"but current board size is {self.board_size}")
+                        self.logger.log(
+                            "Warning: Loaded model "
+                            f"has board size {load_board_size}, "
+                            f"but current board size is {self.board_size}")
                 if self.logger:
-                    self.logger.log(f"Successfully loaded model from {filepath}")
+                    self.logger.log("Successfully loaded "
+                                    f"model from {filepath}")
             return True
         except Exception as e:
             if self.logger:
                 self.logger.log(f"Error loading model from {filepath}: {e}")
             return False
-      
-
-        
