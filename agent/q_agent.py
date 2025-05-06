@@ -22,9 +22,9 @@ class QAgent:
     }
 
     def __init__(self, board_size=10, logger=None,
-                 learning_rate=0.1, discount_factor=0.95,
+                 learning_rate=0.1, discount_factor=0.99,
                  exploration_rate=1.0, exploration_decay=0.995,
-                 exploration_min=0.05):
+                 exploration_min=0.01):
         """
         Initialize the QAgent with given parameters.
 
@@ -66,13 +66,24 @@ class QAgent:
             self.q_table[state_key] = [0, 0, 0, 0]
 
         if random.random() < self.exploration_rate:
+            food_direction = state_key.split("|")[4] if len( state_key.split("|")) > 4 else -1
+
+            if food_direction != -1 and random.random() < 0.7:
+                foor_dir_int = int(food_direction)
+                if foor_dir_int in valid_actions:
+                    return foor_dir_int
             return random.choice(valid_actions)
         
-        q_values = self.q_table.get(state_key, {})
+        q_values = self.q_table[state_key]
         valid_q_values = [(action, q_values[action]) for action in valid_actions]
-        best_action = max(valid_q_values, key=lambda a: q_values[a])
+        max_q = max([ q for _, q in valid_q_values])
+        best_actions = [action for action, q in valid_q_values if q == max_q]
 
-        return best_action
+        food_direction = state_key.split("|")[4] if len( state_key.split("|")) > 4 else -1
+        if food_direction != -1 and int(food_direction) in valid_actions:
+            return int(food_direction)
+
+        return random.choice(best_actions)
 
     def update(self, state, action, reward, next_state, done):
         """

@@ -1,5 +1,6 @@
 import argparse
 import os
+import time
 from utils.logger import Logger
 from enviroment.board import Board
 from enviroment.gui import GUI
@@ -98,10 +99,15 @@ def main():
 
     max_lenth = 0
     max_steps = 0
+    sesision_stats = []
+    total_apples = 0
+
     for session in range(args.sessions):
         board.reset()
         done = False
         steps = 0
+        start_time = time.time()
+        session_apples = 0
 
         while not done:
             state = board.get_snake_vision()
@@ -110,6 +116,11 @@ def main():
             reward, done, info = board.step(action)
             next_state = board.get_snake_vision()
             board.print_snake_vision_grid()
+
+            if info.get("reason") == "Ate green apple":
+                session_apples += 1
+                total_apples += 1
+
             if not args.dontlearn:
                 agent.update(state, action, reward, next_state, done)
 
@@ -117,20 +128,29 @@ def main():
                 gui.update()
                 if args.step_by_step:
                     gui.wait_for_key()
+
             steps += 1
             if board.snake_length > max_lenth:
                 max_lenth = board.snake_length
     
             if args.visual.lower() == "off":
-                logger.log(f"Action: {action}")
-                logger.log(f"Reward: {reward}")
-                logger.log(f"Info: {info}")
-
+                logger.log(f"Session {session+1}, Step {steps}, Snake length: {board.snake_length}")
+                logger.log(f"Action: {action}, Reward: {reward}, Info: {info}")
+                logger.log(f"Exploration rate: {agent.exploration_rate:.4f}")
+        sesion_duration = time.time() - start_time
+        sesision_stats.append({
+            "session": session + 1,
+            "duration": sesion_duration,
+            "apples": session_apples,
+            "steps": steps,
+            "snake_length": board.snake_length
+        })
         if steps > max_steps:
             max_steps = steps
 
-        logger.log(f"Session {session+1}/{args.sessions} - "
-                   f"Length: {board.snake_length}, Steps: {steps}")
+        logger.log(f"Session {session+1}/{args.sessions}")
+        logger.log(f"Length: {board.snake_length}, Steps: {steps}")
+        logger.log(f"Duration: {sesion_duration:.2f}s, Apples: {session_apples}")
 
     if args.save and not args.dontlearn:
         save_dir = os.path.dirname(args.save)
@@ -139,7 +159,9 @@ def main():
         agent.save_model(args.save)
         logger.log(f"Save learning state in {args.save}")
 
-    logger.log(f"GAME OVER , max length: {max_lenth}, max steps: {max_steps}")
+    logger.log(f"GAME   OVER")
+    logger.log(f"Max length: {max_lenth}, Max steps: {max_steps}")
+    logger.log(f"Total apples: {total_apples}")
 
 
 if __name__ == "__main__":

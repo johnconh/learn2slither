@@ -4,7 +4,7 @@ class StateEncoder:
     Converts the complex state representation into a simplified format
     that can be used as a key in the Q-table.
     """
-    def __init__(self, max_vision_length=3):
+    def __init__(self, max_vision_length=8):
         """
         Initialize the StateEncoder with given parameters.
         This limits how far the snake can see for Q-table simplification.
@@ -15,21 +15,40 @@ class StateEncoder:
 
     def encode(self, state):
         """
-        Encode the state dictionary into a string key for the Q-table.
-        Simplifies the vision to reduce the state space.
-
-        Format: "up_vision|right_vision|down_vision|left_vision"
-        Where each vision is encoded as a string of cell types,
-        limited to max_vision_length.
+        Encode a single direction vision list into a string.
+        Limits the vision to max_vision_length elements
         """
 
         up_vision = self._encode_direction(state["up"])
         right_vision = self._encode_direction(state["right"])
         down_vision = self._encode_direction(state["down"])
         left_vision = self._encode_direction(state["left"])
+        food_direction = self._find_food_direction(state)
 
-        state_key = f"{up_vision}|{right_vision}|{down_vision}|{left_vision}"
+        state_key = f"{up_vision}|{right_vision}|{down_vision}|{left_vision}|{food_direction}"
         return state_key
+    
+    def _find_food_direction(self, state):
+        """
+        Find the direction to the closest food (green apple).
+        Returns a value 0-3 indicating the primary direction to food:
+        0: up, 1: right, 2: down, 3: left, -1: no food visible
+        """
+        directions = ["up", "right", "down", "left"]
+        food_distances = []
+
+        for direction in directions:
+            try:
+                food_index = state[direction].index(3)
+                food_distances.append((food_index, directions.index(direction)))
+            except:
+                pass
+        
+        if not food_distances:
+            return -1
+
+        clossest_food = min(food_distances, key=lambda x: x[0])
+        return clossest_food[1]
 
     def _encode_direction(self, vision_list):
         """
@@ -50,9 +69,22 @@ class StateEncoder:
         parts = state_key.split("|")
         if len(parts) != 4:
             raise ValueError("Invalid state key format")
-        return {
-            "up": [int(x) for x in parts[0]],
-            "right": [int(x) for x in parts[1]],
-            "down": [int(x) for x in parts[2]],
-            "left": [int(x) for x in parts[3]],
+        decoded_sate = {
+            "up": self._decode_direction(parts[0]),
+            "right": self._decode_direction(parts[1]),
+            "down": self._decode_direction(parts[2]),
+            "left": self._decode_direction(parts[3])
         }
+
+        if len(parts) > 4:
+            decoded_sate["food_direction"] = int(parts[4])
+        
+        return decoded_sate
+
+    def _decode_direction(self, encoded_string):
+        """
+        Helper to decode a direction string to a list of integers
+        """
+        if not encoded_string:
+            return []
+        return [int(x) for x in encoded_string.split("_")]

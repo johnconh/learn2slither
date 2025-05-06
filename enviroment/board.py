@@ -46,6 +46,8 @@ class Board:
         self.direction = None
         self.snake_length = 0
         self.game_over = False
+        self.steps_without_eating = 0
+        self.max_steps_without_eating = size * size
         self.reset()
 
     def reset(self):
@@ -86,6 +88,7 @@ class Board:
         self._place_apples(self.GREEN_APPLE, 2)
         self._place_apples(self.RED_APPLE, 1)
         self.game_over = False
+        self.steps_without_eating = 0
 
     def _place_apples(self, apple_type, count):
         """
@@ -121,6 +124,24 @@ class Board:
             return (head_x, head_y + 1)
         else:
             return (head_x - 1, head_y)
+    
+    def _calculate_distance_fod(self):
+        """
+        Calculate distance from head to closest green apple.
+        Returns Manhattan distance to the closest apple.
+        """
+        if not self.green_apples:
+            return self.size * 2
+        
+        head_x, head_y = self.snake[0]
+        min_distance = float("inf")
+
+        for apple_x, apple_y in self.green_apples:
+            distance = abs(head_x - apple_x) + abs(head_y - apple_y)
+            if distance < min_distance:
+                min_distance = distance
+
+        return min_distance
 
     def step(self, action):
         """
@@ -129,17 +150,19 @@ class Board:
         """
         if self.game_over:
             return 0, True, {"reason": "Game Over"}
-
+        
+        old_distance = self._calculate_distance_fod()
         next_x, next_y = self._get_next_head_position(action)
         self.direction = action
+        self.steps_without_eating += 1
 
         if not (0 <= next_x < self.size and 0 <= next_y < self.size):
             self.game_over = True
-            return -100, True, {"reason": "Hit the wall"}
+            return -10, True, {"reason": "Hit the wall"}
 
         if self.grid[next_x, next_y] == self.SNAKE_BODY:
             self.game_over = True
-            return -100, True, {"reason": "Hit self"}
+            return -10, True, {"reason": "Hit self"}
 
         self.snake.appendleft((next_x, next_y))
         old_head_x, old_head_y = self.snake[1]
@@ -161,13 +184,26 @@ class Board:
                 self.grid[last_x, last_y] = self.EMPTY
             else:
                 self.game_over = True
-                return -100, True, {"reason": "Leng zero"}
-            return -8, False, {"reason": "Ate red apple"}
+                return -10, True, {"reason": "Leng zero"}
+            return -5, False, {"reason": "Ate red apple"}
         else:
             self.grid[next_x, next_y] = self.SNAKE_HEAD
             last_x, last_y = self.snake.pop()
             self.grid[last_x, last_y] = self.EMPTY
-            return 0, False, {"reason": "Moved"}
+
+            new_distance = self._calculate_distance_fod()
+
+            distance_reward = 0
+            if new_distance < old_distance:
+                distance_reward = 0.1
+            elif new_distance > old_distance:
+                distance_reward = -0.1
+            
+            if self.steps_without_eating > self.max_steps_without_eating:
+                self.game_over = True
+                return -5, True, {"reason": "Too many steps without eating"}
+
+            return distance_reward, False, {"reason": "Moved"}
 
     def get_snake_vision(self):
         """
