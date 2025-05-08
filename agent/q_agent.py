@@ -23,8 +23,8 @@ class QAgent:
 
     def __init__(self, board_size=10, logger=None,
                  learning_rate=0.1, discount_factor=0.99,
-                 exploration_rate=1.0, exploration_decay=0.995,
-                 exploration_min=0.01):
+                 exploration_rate=1.0, exploration_decay=0.999,
+                 exploration_min=0.05):
         """
         Initialize the QAgent with given parameters.
 
@@ -59,31 +59,55 @@ class QAgent:
         Uses epsilon-greedy strategy for exploration vs exploitation.
         """
         state_key = self._get_state_key(state_key)
-
         valid_actions = [a for a in range(4) if a != self.OP_ACT[current_direction]]
 
         if state_key not in self.q_table:
             self.q_table[state_key] = [0, 0, 0, 0]
+        
+        danger_parts = state_key.split("|")[0]
+        foods_parts = state_key.split("|")[1]
+        red_foods_parts = state_key.split("|")[2] if len(state_key.split("|")) > 2 else "0000"
 
         if random.random() < self.exploration_rate:
-            food_direction = state_key.split("|")[4] if len( state_key.split("|")) > 4 else -1
+            safe_actions = []
+            for action in valid_actions:
+                if action < len(danger_parts) and danger_parts[action] == "0":
+                    safe_actions.append(action)
 
-            if food_direction != -1 and random.random() < 0.7:
-                foor_dir_int = int(food_direction)
-                if foor_dir_int in valid_actions:
-                    return foor_dir_int
+            food_actions = []
+            for action in valid_actions:
+                if action < len(foods_parts) and foods_parts[action] in ["3"]:
+                    food_actions.append(action)
+
+            red_food_actions = []
+            for action in valid_actions:
+                if action < len(red_foods_parts) and red_foods_parts[action] in ["4"]:
+                    red_food_actions.append(action)
+
+            food_safe_actions = [a for a in food_actions if a in safe_actions]
+
+            if food_safe_actions and random.random() < 0.7:
+                 return random.choice(food_safe_actions)
+            elif safe_actions and random.random() < 0.9:
+                return random.choice(safe_actions)
+            elif red_food_actions and random.random() < 0.6:
+                return random.choice(red_food_actions)
+
             return random.choice(valid_actions)
-        
-        q_values = self.q_table[state_key]
-        valid_q_values = [(action, q_values[action]) for action in valid_actions]
-        max_q = max([ q for _, q in valid_q_values])
-        best_actions = [action for action, q in valid_q_values if q == max_q]
+        else:
+            q_values = self.q_table[state_key]
+            safe_actions = []
+            for action in valid_actions:
+                if action < len(danger_parts) and danger_parts[action] == "0":
+                    safe_actions.append(action)
+            if safe_actions:
+                max_q = max(q_values[a] for a in safe_actions)
+                best_actions = [a for a in safe_actions if q_values[a] == max_q]
+            else:
+                max_q = max(q_values[a] for a in valid_actions)
+                best_actions = [a for a in valid_actions if q_values[a] == max_q]
 
-        food_direction = state_key.split("|")[4] if len( state_key.split("|")) > 4 else -1
-        if food_direction != -1 and int(food_direction) in valid_actions:
-            return int(food_direction)
-
-        return random.choice(best_actions)
+            return random.choice(best_actions)
 
     def update(self, state, action, reward, next_state, done):
         """
@@ -91,6 +115,7 @@ class QAgent:
         Implements the Q-learning update formula.
         """
         state_key = self._get_state_key(state)
+        print(f"State: {state_key}")
         next_state_key = self._get_state_key(next_state)
 
         if state_key not in self.q_table:
@@ -98,19 +123,31 @@ class QAgent:
         if next_state_key not in self.q_table:
             self.q_table[next_state_key] = [0, 0, 0, 0]
 
+        danger_parts = state_key.split("|")[0]
+        food_parts = state_key.split("|")[1]
+        print(f"{food_parts}")
+
+        danger_level = int(danger_parts[action]) if action < len(danger_parts) else 0
+        danger_penalty = -10 if danger_level == 2 else (-3 if danger_level == 1 else 0)
+
+        food_level = int(food_parts[action]) if action < len(food_parts) else 0
+        food_bonus = 2 if food_level > 0 else 0
+
+        adjusted_reward = reward + food_bonus + danger_penalty
+
         current_q = self.q_table[state_key][action]
 
         if done:
             max_next_q = 0
         else:
-            next_direction = action
-            valid_next_actions = [a for a in range(4) if a != self.OP_ACT[next_direction]]
-            valid_next_q_values = [self.q_table[next_state_key][a] for a in valid_next_actions]
-            max_next_q = max(valid_next_q_values) if valid_next_q_values else 0
+            next_dir = action
+            valid_actions = [a for a in range(4) if a != self.OP_ACT[next_dir]]
+            max_next_q = max(self.q_table[next_state_key][a] for a in valid_actions) if valid_actions else 0
         
         new_q = current_q + self.learning_rate * (
-            reward + self.discount_factor * max_next_q - current_q
+            adjusted_reward + self.discount_factor * max_next_q - current_q
         )
+
         self.q_table[state_key][action] = new_q
 
         if self.exploration_rate > self.exploration_min:

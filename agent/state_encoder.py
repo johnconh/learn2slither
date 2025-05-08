@@ -4,7 +4,7 @@ class StateEncoder:
     Converts the complex state representation into a simplified format
     that can be used as a key in the Q-table.
     """
-    def __init__(self, max_vision_length=8):
+    def __init__(self, max_vision_length=5):
         """
         Initialize the StateEncoder with given parameters.
         This limits how far the snake can see for Q-table simplification.
@@ -19,72 +19,67 @@ class StateEncoder:
         Limits the vision to max_vision_length elements
         """
 
-        up_vision = self._encode_direction(state["up"])
-        right_vision = self._encode_direction(state["right"])
-        down_vision = self._encode_direction(state["down"])
-        left_vision = self._encode_direction(state["left"])
-        food_direction = self._find_food_direction(state)
+        danger_up = self._detect_danger(state["up"])
+        danger_right = self._detect_danger(state["right"])
+        danger_down = self._detect_danger(state["down"])
+        danger_left = self._detect_danger(state["left"])
 
-        state_key = f"{up_vision}|{right_vision}|{down_vision}|{left_vision}|{food_direction}"
+        food_up = self._detect_food(state["up"])
+        food_right = self._detect_food(state["right"])
+        food_down = self._detect_food(state["down"])
+        food_left = self._detect_food(state["left"])
+
+        red_food_up = self._detect_red_food(state["up"])
+        red_food_right = self._detect_red_food(state["right"])
+        red_food_down = self._detect_red_food(state["down"])
+        red_food_left = self._detect_red_food(state["left"])
+
+        state_key = (
+            f"{danger_up}{danger_right}{danger_down}{danger_left}|"
+            f"{food_up}{food_right}{food_down}{food_left}|"
+            f"{red_food_up}{red_food_right}{red_food_down}{red_food_left}"
+        )
         return state_key
+
+    def _detect_danger(self, vision):
+        """
+        Detect danger in vision with distance awareness.
+        Returns:
+        - 2: Immediate danger (position 0)
+        - 1: Near danger (positions 1-2)
+        - 0: No danger in visible range
+        """
+        if 2 in vision[:1] or 5 in vision[:1]:
+            return 2
+        elif 2 in vision[1:3] or 5 in vision[1:3]:
+            return 1
+        return 0
     
-    def _find_food_direction(self, state):
+    def _detect_food(self, vision):
         """
-        Find the direction to the closest food (green apple).
-        Returns a value 0-3 indicating the primary direction to food:
-        0: up, 1: right, 2: down, 3: left, -1: no food visible
-        """
-        directions = ["up", "right", "down", "left"]
-        food_distances = []
-
-        for direction in directions:
-            try:
-                food_index = state[direction].index(3)
-                food_distances.append((food_index, directions.index(direction)))
-            except:
-                pass
-        
-        if not food_distances:
-            return -1
-
-        clossest_food = min(food_distances, key=lambda x: x[0])
-        return clossest_food[1]
-
-    def _encode_direction(self, vision_list):
-        """
-        Encode a single direction vision list into a string.
-        Limits the vision to max_vision_length elements.
+        Detect green apple in vision with distance awareness.
+        Returns:
+        - 3: Green apple at immediate position
+        - 2: Green apple at position 1
+        - 1: Green apple at positions 2-4
+        - 0: No green apple in visible range
         """
 
-        limited_vision = vision_list[:min(len(vision_list),
-                                          self.max_vision_length)]
-        return "_".join(map(str, limited_vision))
+        if 3 in vision[:1]:
+            return 3
+        elif 3 in vision[1:2]:
+            return 2
+        elif 3 in vision[2:4]:
+            return 1
+        return 0
 
-    def decode(self, state_key):
+    def _detect_red_food(self, vision):
         """
-        Decode a state key back into a state dictionary.
-        Useful for debugging and visualization.
+        Detect red apple in vision with distance awareness.
+        Returns:
+        - 1: Red apple visible
+        - 0: No red apple in visible range
         """
-
-        parts = state_key.split("|")
-        if len(parts) != 4:
-            raise ValueError("Invalid state key format")
-        decoded_sate = {
-            "up": self._decode_direction(parts[0]),
-            "right": self._decode_direction(parts[1]),
-            "down": self._decode_direction(parts[2]),
-            "left": self._decode_direction(parts[3])
-        }
-
-        if len(parts) > 4:
-            decoded_sate["food_direction"] = int(parts[4])
-        
-        return decoded_sate
-
-    def _decode_direction(self, encoded_string):
-        """
-        Helper to decode a direction string to a list of integers
-        """
-        if not encoded_string:
-            return []
-        return [int(x) for x in encoded_string.split("_")]
+        if 4 in vision[:5]:
+            return 1
+        return 0

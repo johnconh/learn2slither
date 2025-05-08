@@ -1,6 +1,7 @@
 import argparse
 import os
 import time
+
 from utils.logger import Logger
 from enviroment.board import Board
 from enviroment.gui import GUI
