@@ -105,8 +105,7 @@ class SnakeGame:
         if self.head in self.green_apples:
             self.score += 1
             self.green_apples.remove(self.head)
-            while len(self.green_apples) < 2:
-                self._place_green_apples(1)
+            self._place_green_apples(1)
             return False
         elif self.head == self.red_apple:
             if len (self.snake) == 4:
