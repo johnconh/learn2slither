@@ -29,7 +29,7 @@ class FoodType(Enum):
     GREEN = 1
     RED = 2
 
-class SnakeGameAI:
+class Snake:
     
     def __init__(self, w=640, h=480):
         self.w = w
