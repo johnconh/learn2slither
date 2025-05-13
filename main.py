@@ -5,6 +5,14 @@ from snakeAI import Snake
 from plot import plot
 
 
+def pth_file(value):
+    """
+    Custom type for file paths.
+    """
+    if not value.endswith('.pth'):
+        raise argparse.ArgumentTypeError(f"Invalid file name: {value}. Must end with .pth")
+    return value
+
 def positive_int(value):
     """
     Custom type for positive integers.
@@ -42,7 +50,7 @@ def parse_args():
     )
     parser.add_argument(
         "-save",
-        type=str,
+        type=pth_file,
         default=None,
         help="Path to save the trainer model. ",
     )
@@ -105,10 +113,7 @@ def main():
             if score > record:
                 record = score
                 if args.save:
-                    if args.save.endswith('.pth'):
-                        agent.model.save(args.save)
-                    else:
-                        print(f"Invalid file extension for save path: {args.save}. Only '.pth' is allowed.")
+                    agent.model.save(args.save)
             print('Game', agent.n_games, 'Score', score, 'Record:', record)
 
             plot_scores.append(score)
