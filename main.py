@@ -1,11 +1,8 @@
 import argparse
 import os
-import time
-
-from utils.logger import Logger
-from enviroment.board import Board
-from enviroment.gui import GUI
-from agent.q_agent import QAgent
+from agent import Agent
+from snakeAI import Snake
+from plot import plot
 
 
 def positive_int(value):
@@ -33,7 +30,7 @@ def parse_args():
     parser.add_argument(
         "-sessions",
         type=int,
-        default=1,
+        default=10,
         help="Number training session",
     )
     parser.add_argument(
@@ -82,87 +79,41 @@ def parse_args():
 
 def main():
     args = parse_args()
-    logger = Logger()
-    board_size = args.board_size
-    board = Board(board_size, logger)
-    agent = QAgent(board_size, logger)
-    if args.load:
-        if os.path.exists(args.load):
-            logger.log(f"Loading model from {args.load}")
-            agent.load_model(args.load)
-        else:
-            logger.log(f"Error: Model file {args.load} not found")
-            return
+    game = Snake(args.board_size, args.visual, args.step_by_step, args.speed)
+    agent = Agent()
+    plot_scores = []  
+    plot_mean_scores = []
+    total_score = 0
+    record = 0
+    session = args.sessions
 
-    gui = None
-    if args.visual == "on":
-        gui = GUI(board, args.speed)
-
-    max_lenth = 0
-    max_steps = 0
-    sesision_stats = []
-    total_apples = 0
-
-    for session in range(args.sessions):
-        board.reset()
-        done = False
-        steps = 0
-        start_time = time.time()
-        session_apples = 0
-
-        while not done:
-            state = board.get_snake_vision()
-            current_dir = board.direction
-            action = agent.choose_action(state, current_dir)
-            reward, done, info = board.step(action)
-            next_state = board.get_snake_vision()
-            board.print_snake_vision_grid()
-
-            if info.get("reason") == "Ate green apple":
-                session_apples += 1
-                total_apples += 1
-
+    while session > 0:
+        state_old = agent.get_state(game)
+        final_move = agent.get_action(state_old)
+        reward, done, score = game.play_step(final_move)
+        state_new = agent.get_state(game)
+        if not args.dontlearn:
+            agent.train_short_memory(state_old, final_move, reward, state_new, done)
+            agent.remenber(state_old, final_move, reward, state_new, done)
+        if done:
+            session -= 1
+            game.reset()
+            agent.n_games += 1
             if not args.dontlearn:
-                agent.update(state, action, reward, next_state, done)
+                agent.train_long_memory()
 
-            if gui:
-                gui.update()
-                if args.step_by_step:
-                    gui.wait_for_key()
+            if score > record:
+                record = score
+                if args.save:
+                    agent.model.save(args.save)
 
-            steps += 1
-            if board.snake_length > max_lenth:
-                max_lenth = board.snake_length
-    
-            if args.visual.lower() == "off":
-                logger.log(f"Session {session+1}, Step {steps}, Snake length: {board.snake_length}")
-                logger.log(f"Action: {action}, Reward: {reward}, Info: {info}")
-                logger.log(f"Exploration rate: {agent.exploration_rate:.4f}")
-        sesion_duration = time.time() - start_time
-        sesision_stats.append({
-            "session": session + 1,
-            "duration": sesion_duration,
-            "apples": session_apples,
-            "steps": steps,
-            "snake_length": board.snake_length
-        })
-        if steps > max_steps:
-            max_steps = steps
+            print('Game', agent.n_games, 'Score', score, 'Record:', record)
 
-        logger.log(f"Session {session+1}/{args.sessions}")
-        logger.log(f"Length: {board.snake_length}, Steps: {steps}")
-        logger.log(f"Duration: {sesion_duration:.2f}s, Apples: {session_apples}")
-
-    if args.save and not args.dontlearn:
-        save_dir = os.path.dirname(args.save)
-        if not os.path.exists(save_dir):
-            os.makedirs(save_dir)
-        agent.save_model(args.save)
-        logger.log(f"Save learning state in {args.save}")
-
-    logger.log(f"GAME   OVER")
-    logger.log(f"Max length: {max_lenth}, Max steps: {max_steps}")
-    logger.log(f"Total apples: {total_apples}")
+            plot_scores.append(score)
+            total_score += score
+            mean_score = total_score / agent.n_games
+            plot_mean_scores.append(mean_score)
+            plot(plot_scores, plot_mean_scores)
 
 
 if __name__ == "__main__":
