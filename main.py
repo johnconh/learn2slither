@@ -44,7 +44,7 @@ def parse_args():
         "-save",
         type=str,
         default=None,
-        help="Path to save the trainer model",
+        help="Path to save the trainer model. ",
     )
     parser.add_argument(
         "-load",
@@ -105,8 +105,10 @@ def main():
             if score > record:
                 record = score
                 if args.save:
-                    agent.model.save(args.save)
-
+                    if args.save.endswith('.pth'):
+                        agent.model.save(args.save)
+                    else:
+                        print(f"Invalid file extension for save path: {args.save}. Only '.pth' is allowed.")
             print('Game', agent.n_games, 'Score', score, 'Record:', record)
 
             plot_scores.append(score)
