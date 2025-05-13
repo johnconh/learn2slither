@@ -112,8 +112,8 @@ def main():
 
             if score > record:
                 record = score
-                if args.save:
-                    agent.model.save(args.save)
+            if args.save:
+                agent.model.save(args.save)
             print('Game', agent.n_games, 'Score', score, 'Record:', record)
 
             plot_scores.append(score)
