@@ -22,6 +22,10 @@ class QNet(nn.Module):
             os.makedirs(model_folder)
         torch.save(self.state_dict(), file_name)
     
+    def load(self, file_name):
+        self.load_state_dict(torch.load(file_name))
+
+    
 class QTrainer:
     def __init__(self, model, lr, gamma):
         self.lr = lr

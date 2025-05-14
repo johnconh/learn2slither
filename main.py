@@ -73,7 +73,7 @@ def parse_args():
     parser.add_argument(
         "-board-size",
         type=board_size_type,
-        default=10,
+        default=20,
         help="Size of the board",
     )
     parser.add_argument(
@@ -95,9 +95,17 @@ def main():
     record = 0
     session = args.sessions
 
+    if args.load:
+        if os.path.exists(args.load):
+            agent.model.load(args.load)
+            agent.epsilon = -1000
+        else:
+            print(f"Model file {args.load} not found.")
+            return
+
     while session > 0:
         state_old = agent.get_state(game)
-        final_move = agent.get_action(state_old)
+        final_move = agent.get_action(state_old, args.dontlearn)
         reward, done, score = game.play_step(final_move)
         state_new = agent.get_state(game)
         if not args.dontlearn:

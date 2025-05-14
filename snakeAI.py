@@ -30,16 +30,19 @@ class Snake:
     
     def __init__(self, board_size, visual, step_by_step, speed):
         self.w = 800
-        self.visual = visual
+        self.visual = visual == "on"
         self.step_by_step = step_by_step
         self.speed = speed
         self.num_cells = board_size
         self.block_size = self.w // self.num_cells
         self.w = self.block_size * self.num_cells
         self.h = self.block_size * self.num_cells
-        self.display = pygame.display.set_mode((self.w, self.h))
-        pygame.display.set_caption('Snake')
-        self.clock = pygame.time.Clock()
+
+        if self.visual:
+            self.display = pygame.display.set_mode((self.w, self.h))
+            pygame.display.set_caption('Snake')
+            self.clock = pygame.time.Clock()
+
         self.reset()
 
 
@@ -76,6 +79,7 @@ class Snake:
             else:
                 self.foods.append((food_point, food_type))
                 break
+
     def _distance_to_closest_green(self, head):
         green_foods = [p for p, t in self.foods if t == FoodType.GREEN]
         if not green_foods:
@@ -84,6 +88,13 @@ class Snake:
             
     def play_step(self, action):
         self.frame_iteration += 1
+
+        if self.visual:
+            self._update_ui()
+            self.clock.tick(self.speed)
+        if not self.visual or (self.visual and self.step_by_step):
+            self._get_snake_vision()
+
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
@@ -129,8 +140,17 @@ class Snake:
         if not food_eaten:
             self.snake.pop()
 
-        self._update_ui()
-        self.clock.tick(self.speed)
+
+        if self.step_by_step:
+            pause = True
+            while pause:
+                for event in pygame.event.get():
+                    if event.type == pygame.KEYDOWN:
+                        pause = False
+                    elif event.type == pygame.QUIT:
+                        pygame.quit()
+                        quit()
+        
         return reward, game_over, self.score
     
     def is_collision(self, pt=None):
@@ -174,6 +194,9 @@ class Snake:
             next_idx = (idx - 1) % 4
             new_dir = clock_wise[next_idx]
 
+        if not self.visual or (self.visual and self.step_by_step):
+            print(new_dir.name)
+
         self.direction = new_dir
 
         x = self.head.x
@@ -188,3 +211,45 @@ class Snake:
             y -= self.block_size
             
         self.head = Point(x, y)
+    
+    def _get_snake_vision(self):
+
+        head_x, head_y = int(self.head.x // self.block_size), int(self.head.y // self.block_size)
+        
+        directions = {
+            "up": (0, -1),
+            "down": (0, 1),
+            "left": (-1, 0),
+            "right": (1, 0)
+        }
+
+        vision = [[" " for _ in range(self.num_cells + 2)] for _ in range(self.num_cells + 2)]
+        vision[head_y + 1][head_x + 1] = "H"
+
+        for direction, (dx, dy) in directions.items():
+            x, y = head_x, head_y
+            while True:
+                x += dx
+                y += dy
+
+                vis_x, vis_y = x + 1, y + 1
+                if vis_x < 0 or vis_x >= len(vision[0]) or vis_y < 0 or vis_y >= len(vision):
+                    break
+
+                if x < 0 or x >= self.num_cells or y < 0 or y >= self.num_cells:
+                    vision[vis_y][vis_x] = "W"
+                    break
+                elif Point(x * self.block_size, y * self.block_size) in self.snake:
+                    vision[vis_y][vis_x] = "S"
+                else:
+                    vision[vis_y][vis_x] = "0"
+
+                for food_point, food_type in self.foods:
+                    if food_point.x // self.block_size == x and food_point.y // self.block_size == y:
+                        vision[vis_y][vis_x] = "G" if food_type == FoodType.GREEN else "R"
+
+        for row in vision:
+            print(" ".join(row))
+        print("\n")
+
+
