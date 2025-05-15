@@ -62,9 +62,6 @@ def launch_config_panel(run_game_callback, args=None):
     ttk.Checkbutton(main_frame, text="Enable step-by-step mode", variable=step_var).grid(row=row, column=1, sticky="w", pady=5); row += 1
     ttk.Checkbutton(main_frame, text="Disable learning (test mode)", variable=dontlearn_var).grid(row=row, column=1, sticky="w", pady=5); row += 1
 
-    mode_var = tk.StringVar(value="ai")
-    add_row("Game mode:", ttk.Combobox(main_frame, textvariable=mode_var, values=["ai", "human"], width=10), row)
-    row += 1
     def start_game():
         args = SimpleNamespace(
             sessions=sessions_var.get(),
@@ -79,6 +76,9 @@ def launch_config_panel(run_game_callback, args=None):
         )
         root.destroy()
         run_game_callback(args)
+
+    ttk.Button(main_frame, text="Start AI Game", command=start_game).grid(row=row, column=0, columnspan=2, pady=10)
+    row += 1
 
     def start_human_game():
         root.destroy()
