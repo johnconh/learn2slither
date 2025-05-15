@@ -80,9 +80,6 @@ def launch_config_panel(run_game_callback, args=None):
         root.destroy()
         run_game_callback(args)
 
-    ttk.Button(main_frame, text="Start AI Game", command=start_game).grid(row=row, column=0, columnspan=2, pady=10)
-    row += 1
-
     def start_human_game():
         root.destroy()
         import snake_game

@@ -4,6 +4,8 @@ from agent import Agent
 from snakeAI import Snake
 from plot import plot
 from config_panel import launch_config_panel
+import pygame
+import matplotlib.pyplot as plt
 
 
 def pth_file(value):
@@ -106,38 +108,41 @@ def run_game(args):
         else:
             print(f"Model file {args.load} not found.")
             return
-
-    while session > 0:
-        state_old = agent.get_state(game)
-        final_move = agent.get_action(state_old, args.sessions ,args.dontlearn)
-        reward, done, score = game.play_step(final_move)
-        state_new = agent.get_state(game)
-
-        if not args.dontlearn:
-            agent.train_short_memory(state_old, final_move, reward, state_new, done)
-            agent.remenber(state_old, final_move, reward, state_new, done)
-        if done:
-            session -= 1
-            game.reset()
-            agent.n_games += 1
+    try:
+        while session > 0:
+            state_old = agent.get_state(game)
+            final_move = agent.get_action(state_old, args.sessions ,args.dontlearn)
+            reward, done, score = game.play_step(final_move)
+            state_new = agent.get_state(game)
 
             if not args.dontlearn:
-                agent.train_long_memory()
+                agent.train_short_memory(state_old, final_move, reward, state_new, done)
+                agent.remenber(state_old, final_move, reward, state_new, done)
+            if done:
+                session -= 1
+                game.reset()
+                agent.n_games += 1
 
-            if score > record:
-                record = score
+                if not args.dontlearn:
+                    agent.train_long_memory()
 
-            if args.save:
-                agent.model.save(args.save)
+                if score > record:
+                    record = score
 
-            print('Game', agent.n_games, 'Score', score, 'Record:', record)
+                if args.save:
+                    agent.model.save(args.save)
 
-            if not args.dontlearn:
-                plot_scores.append(score)
-                total_score += score
-                mean_score = total_score / agent.n_games
-                plot_mean_scores.append(mean_score)
-                plot(plot_scores, plot_mean_scores)
+                print('Game', agent.n_games, 'Score', score, 'Record:', record)
+
+                if not args.dontlearn:
+                    plot_scores.append(score)
+                    total_score += score
+                    mean_score = total_score / agent.n_games
+                    plot_mean_scores.append(mean_score)
+                    plot(plot_scores, plot_mean_scores)
+    finally:
+        pygame.quit()
+        plt.close('all')
 
 def main():
     args = parse_args()
@@ -145,9 +150,8 @@ def main():
     if args.game:
         launch_config_panel(run_game, args)
         return
-
-    run_game(args)
-
+    else:
+        run_game(args)
 
 if __name__ == "__main__":
     main()
