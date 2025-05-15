@@ -15,7 +15,6 @@ BLACK = (0, 0, 0)
 font = pygame.font.Font(None, 30)
 
 BLOCK_SIZE = 20
-SPEED = 10
 
 class Direction(Enum):
     RIGHT = 1
@@ -44,6 +43,8 @@ class SnakeGame:
         self.red_apple = None
         self._place_green_apples(2)
         self._place_red_apple()
+        self.speed = 5
+        self.maxspeed = 42
 
     def _place_green_apples(self, count):
         for _ in range(count):
@@ -73,7 +74,7 @@ class SnakeGame:
             game_over = True
             return game_over, self.score
         self._update_ui()
-        self.clock.tick(SPEED)
+        self.clock.tick(self.speed)
         return game_over, self.score
 
     def _handle_event(self,):
@@ -106,6 +107,7 @@ class SnakeGame:
             self.score += 1
             self.green_apples.remove(self.head)
             self._place_green_apples(1)
+            self.speed = min(self.speed + 1, self.maxspeed)
             return False
         elif self.head == self.red_apple:
             if len (self.snake) == 4:
@@ -114,6 +116,7 @@ class SnakeGame:
             self.snake.pop()
             self.score -= 1
             self._place_red_apple()
+            self.speed = min(self.speed + 1, self.maxspeed)
             return False
 
         self.snake.pop()
