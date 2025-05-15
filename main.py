@@ -3,6 +3,7 @@ import os
 from agent import Agent
 from snakeAI import Snake
 from plot import plot
+from config_panel import launch_config_panel
 
 
 def pth_file(value):
@@ -82,11 +83,14 @@ def parse_args():
         default=100,
         help="Speed of the game",
     )
+    parser.add_argument(
+        "-game",
+        action="store_true",
+        help="Launch GUI configuration panel",
+    )
     return parser.parse_args()
 
-
-def main():
-    args = parse_args()
+def run_game(args):
     game = Snake(args.board_size, args.visual, args.step_by_step, args.speed)
     agent = Agent()
     plot_scores = []  
@@ -105,9 +109,10 @@ def main():
 
     while session > 0:
         state_old = agent.get_state(game)
-        final_move = agent.get_action(state_old, args.dontlearn)
+        final_move = agent.get_action(state_old, args.sessions ,args.dontlearn)
         reward, done, score = game.play_step(final_move)
         state_new = agent.get_state(game)
+
         if not args.dontlearn:
             agent.train_short_memory(state_old, final_move, reward, state_new, done)
             agent.remenber(state_old, final_move, reward, state_new, done)
@@ -115,20 +120,33 @@ def main():
             session -= 1
             game.reset()
             agent.n_games += 1
+
             if not args.dontlearn:
                 agent.train_long_memory()
 
             if score > record:
                 record = score
+
             if args.save:
                 agent.model.save(args.save)
+
             print('Game', agent.n_games, 'Score', score, 'Record:', record)
 
-            plot_scores.append(score)
-            total_score += score
-            mean_score = total_score / agent.n_games
-            plot_mean_scores.append(mean_score)
-            plot(plot_scores, plot_mean_scores)
+            if not args.dontlearn:
+                plot_scores.append(score)
+                total_score += score
+                mean_score = total_score / agent.n_games
+                plot_mean_scores.append(mean_score)
+                plot(plot_scores, plot_mean_scores)
+
+def main():
+    args = parse_args()
+
+    if args.game:
+        launch_config_panel(run_game, args)
+        return
+
+    run_game(args)
 
 
 if __name__ == "__main__":

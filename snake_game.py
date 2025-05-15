@@ -120,7 +120,7 @@ class SnakeGame:
         return False
 
     def _update_ui(self):
-        self.display.fill(GRAY)
+        self.display.fill(BLACK)
 
         for x in range(0, self.w, BLOCK_SIZE):
             pygame.draw.line(self.display, BLACK, (x, 0), (x, self.h))
@@ -155,7 +155,7 @@ class SnakeGame:
             y += BLOCK_SIZE
         self.head = Point(x, y)
 
-if __name__ == "__main__":
+def main():
     game = SnakeGame()
 
     while True:
@@ -166,3 +166,5 @@ if __name__ == "__main__":
     print('Final Score', score)
     pygame.quit()
 
+if __name__ == "__main__":
+    main()

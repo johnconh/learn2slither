@@ -27,7 +27,6 @@ class FoodType(Enum):
     RED = 2
 
 class Snake:
-    
     def __init__(self, board_size, visual, step_by_step, speed):
         self.w = 800
         self.visual = visual == "on"
@@ -45,7 +44,6 @@ class Snake:
 
         self.reset()
 
-
     def reset(self):
         self.direction = Direction.RIGHT
         
@@ -53,12 +51,12 @@ class Snake:
         self.snake = [self.head, 
                       Point(self.head.x-self.block_size, self.head.y),
                       Point(self.head.x-(2*self.block_size), self.head.y)]
-        
+
         self.score = 0
         self.foods = []
         self._place_foods()
         self.frame_iteration = 0
-    
+
     def _place_foods(self):
         green_count = sum(1 for _, food_type in self.foods if food_type == FoodType.GREEN)
         red_count = sum(1 for _, food_type in self.foods if food_type == FoodType.RED)
@@ -85,7 +83,7 @@ class Snake:
         if not green_foods:
             return 0
         return min(abs(head.x - f.x) + abs(head.y - f.y) for f in green_foods)
-            
+
     def play_step(self, action):
         self.frame_iteration += 1
 
@@ -116,7 +114,7 @@ class Snake:
             game_over = True
             reward = -10
             return reward, game_over, self.score
-        
+
         food_eaten = False
         for i, (food_point, food_type) in enumerate(self.foods):
             if self.head == food_point:
@@ -125,7 +123,7 @@ class Snake:
                     self.score += 1
                     reward = 10
                 elif food_type == FoodType.RED:
-                    if len(self.snake) <= 4:
+                    if len(self.snake) == 0:
                         game_over = True
                         reward = -15
                         return reward, game_over, self.score
@@ -150,9 +148,9 @@ class Snake:
                     elif event.type == pygame.QUIT:
                         pygame.quit()
                         quit()
-        
+
         return reward, game_over, self.score
-    
+
     def is_collision(self, pt=None):
         if pt is None:
             pt = self.head
@@ -160,9 +158,9 @@ class Snake:
             return True
         if pt in self.snake[1:]:
             return True
-        
+
         return False
-        
+
     def _update_ui(self):
         self.display.fill(BLACK)
         
@@ -179,7 +177,7 @@ class Snake:
         text = font.render("Score: " + str(self.score), True, WHITE)
         self.display.blit(text, [0, 0])
         pygame.display.flip()
-        
+
     def _move(self, action):
 
         clock_wise = [Direction.RIGHT, Direction.DOWN, Direction.LEFT, Direction.UP]
