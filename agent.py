@@ -2,14 +2,14 @@ import torch
 import random
 import numpy as np
 from collections import deque
-from snakeAI import Snake, Direction, Point, FoodType
+from snakeAI import Direction, Point, FoodType
 from model import QNet, QTrainer
-from plot import plot
 
 
 MAX_MEMORY = 100000
 BATCH_SIZE = 1000
 LR = 0.001
+
 
 class Agent:
     def __init__(self):
@@ -33,13 +33,19 @@ class Agent:
         dir_u = game.direction == Direction.UP
         dir_d = game.direction == Direction.DOWN
 
-        green_foods = [food for food, food_type in game.foods if food_type == FoodType.GREEN]
-        red_foods = [food for food, food_type in game.foods if food_type == FoodType.RED]
+        green_foods = [food for food, food_type in
+                       game.foods if food_type == FoodType.GREEN]
+        red_foods = [food for food, food_type in
+                     game.foods if food_type == FoodType.RED]
 
         def manhattan(p1, p2):
             return abs(p1.x - p2.x) + abs(p1.y - p2.y)
 
-        closest_green = min(green_foods, key=lambda f: manhattan(head, f)) if green_foods else Point(0, 0)
+        closest_green = (
+            min(green_foods, key=lambda f: manhattan(head, f))
+            if green_foods
+            else Point(0, 0)
+        )
         red_food = red_foods[0] if red_foods else Point(0, 0)
 
         state = [
@@ -58,21 +64,20 @@ class Agent:
             (dir_r and game.is_collision(point_u)) or
             (dir_l and game.is_collision(point_d)),
 
-            #move direction
             dir_l,
             dir_r,
             dir_u,
             dir_d,
 
-            closest_green.x < head.x,  # green food left
-            closest_green.x > head.x,  # green food right
-            closest_green.y < head.y,  # green food up
-            closest_green.y > head.y,  # green food down
+            closest_green.x < head.x,
+            closest_green.x > head.x,
+            closest_green.y < head.y,
+            closest_green.y > head.y,
 
-            red_food.x < head.x,  # red food left
-            red_food.x > head.x,  # red food right
-            red_food.y < head.y,  # red food up
-            red_food.y > head.y,  # red food down
+            red_food.x < head.x,
+            red_food.x > head.x,
+            red_food.y < head.y,
+            red_food.y > head.y,
         ]
         return np.array(state, dtype=int)
 

@@ -5,27 +5,28 @@ import torch.nn.functional as F
 import os
 import numpy as np
 
+
 class QNet(nn.Module):
     def __init__(self, input_size, hidden_size, output_size):
         super().__init__()
         self.fc1 = nn.Linear(input_size, hidden_size)
         self.fc2 = nn.Linear(hidden_size, output_size)
-    
+
     def forward(self, x):
         x = F.relu(self.fc1(x))
         x = self.fc2(x)
         return x
-    
+
     def save(self, file_name):
         model_folder = os.path.dirname(file_name)
         if not os.path.exists(model_folder):
             os.makedirs(model_folder)
         torch.save(self.state_dict(), file_name)
-    
+
     def load(self, file_name):
         self.load_state_dict(torch.load(file_name))
 
-    
+
 class QTrainer:
     def __init__(self, model, lr, gamma):
         self.lr = lr
@@ -33,7 +34,7 @@ class QTrainer:
         self.model = model
         self.optimizer = optim.Adam(model.parameters(), lr=self.lr)
         self.criterion = nn.MSELoss()
-    
+
     def train_step(self, state, action, reward, next_state, done):
         state = torch.tensor(np.array(state), dtype=torch.float)
         next_state = torch.tensor(np.array(next_state), dtype=torch.float)
