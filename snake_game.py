@@ -16,13 +16,12 @@ GRAY = (128, 128, 128)
 BLACK = (0, 0, 0)
 BUTTON_COLOR = (70, 130, 180)
 BUTTON_HOVER_COLOR = (100, 160, 21)
-
+    
 font = pygame.font.Font(None, 30)
 big_font = pygame.font.Font(None, 50)
 
 SCORE_FILE = "score.json"
 BLOCK_SIZE = 20
-
 
 class Direction(Enum):
     RIGHT = 1
@@ -30,16 +29,14 @@ class Direction(Enum):
     UP = 3
     DOWN = 4
 
-
 Point = namedtuple("Point", 'x, y')
-
 
 class Button:
     def __init__(self, text, x, y, width, height):
         self.rect = pygame.Rect(x, y, width, height)
         self.text = text
         self.is_hovered = False
-
+    
     def draw(self, screen):
         color = BUTTON_HOVER_COLOR if self.is_hovered else BUTTON_COLOR
         pygame.draw.rect(screen, color, self.rect, border_radius=8)
@@ -55,7 +52,6 @@ class Button:
     def is_clicked(self, mouse_pos):
         return self.rect.collidepoint(mouse_pos)
 
-
 class SnakeGame:
     def __init__(self, w=640, h=480):
         self.w = w
@@ -65,11 +61,7 @@ class SnakeGame:
         button_w, button_h = 200, 50
         button_x = (self.w - button_w) // 2
         button_y = self.h - button_h - 50
-        self.retry_button = Button("Retry",
-                                   button_x,
-                                   button_y,
-                                   button_w,
-                                   button_h)
+        self.retry_button = Button("Retry", button_x, button_y, button_w, button_h)
         self.clock = pygame.time.Clock()
         self.game_active = True
         self.scores = self.load_scores()
@@ -82,9 +74,9 @@ class SnakeGame:
                     return json.load(f)
             else:
                 return []
-        except (FileNotFoundError, json.JSONDecodeError):
+        except:
             return []
-
+    
     def save_scores(self, score, game_time):
         self.scores.append({
             "score": score,
@@ -102,7 +94,7 @@ class SnakeGame:
             print(f"Error saving scores: {e}")
 
     def reset(self):
-        self.direction = Direction.RIGHT
+        self.direction =  Direction.RIGHT
         self.head = Point(self.w/2, self.h/2)
         self.snake = [self.head,
                       Point(self.head.x-BLOCK_SIZE, self.head.y),
@@ -120,21 +112,13 @@ class SnakeGame:
     def _place_green_apples(self, count):
         for _ in range(count):
             while True:
-                x = (
-                    random.randint(
-                        0, (self.w-BLOCK_SIZE)//BLOCK_SIZE
-                    ) * BLOCK_SIZE
-                )
-                y = (
-                    random.randint(
-                        0, (self.h-BLOCK_SIZE)//BLOCK_SIZE
-                        ) * BLOCK_SIZE
-                )
+                x = random.randint(0, (self.w-BLOCK_SIZE)//BLOCK_SIZE) * BLOCK_SIZE
+                y = random.randint(0, (self.h-BLOCK_SIZE)//BLOCK_SIZE) * BLOCK_SIZE
                 point = Point(x, y)
                 if point not in self.snake and point not in self.green_apples:
                     self.green_apples.append(point)
                     break
-
+    
     def _place_red_apple(self):
         while True:
             x = random.randint(0, (self.w-BLOCK_SIZE)//BLOCK_SIZE) * BLOCK_SIZE
@@ -155,7 +139,7 @@ class SnakeGame:
                 if self.retry_button.is_clicked(mouse_pos):
                     self.reset()
                     return False, self.score
-
+ 
             if self.game_active and event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_UP:
                     if self.direction != Direction.DOWN:
@@ -189,17 +173,12 @@ class SnakeGame:
         return False, self.score
 
     def _is_collision(self):
-        if (
-            self.head.x > self.w-BLOCK_SIZE or
-            self.head.x < 0 or
-            self.head.y > self.h-BLOCK_SIZE or
-            self.head.y < 0
-        ):
+        if self.head.x > self.w-BLOCK_SIZE or self.head.x < 0 or self.head.y > self.h-BLOCK_SIZE or self.head.y < 0:
             return True
-
+        
         if self.head in self.snake[1:]:
             return True
-
+        
         if self.head in self.green_apples:
             self.score += 1
             self.green_apples.remove(self.head)
@@ -207,7 +186,7 @@ class SnakeGame:
             self.speed = min(self.speed + 1, self.maxspeed)
             return False
         elif self.head == self.red_apple:
-            if len(self.snake) == 4:
+            if len (self.snake) == 4:
                 return True
             self.snake.pop()
             self.snake.pop()
@@ -218,7 +197,7 @@ class SnakeGame:
 
         self.snake.pop()
         return False
-
+    
     def show_gameover(self):
         self.display.fill(BLACK)
         gameover = big_font.render("Game Over", True, WHITE)
@@ -227,23 +206,15 @@ class SnakeGame:
         score_text = font.render(f"Score: {self.score}", True, WHITE)
         time_text = font.render(f"Time: {self.current_time} sec", True, WHITE)
 
-        self.display.blit(score_text,
-                          (self.w/2 - score_text.get_width()/2, 120))
-        self.display.blit(time_text,
-                          (self.w/2 - time_text.get_width()/2, 150))
+        self.display.blit(score_text, (self.w/2 - score_text.get_width()/2, 120))
+        self.display.blit(time_text, (self.w/2 - time_text.get_width()/2, 150))
 
         if self.scores:
             high_score_text = font.render("HIGH SCORES", True, WHITE)
-            self.display.blit(high_score_text,
-                              (self.w/2 - high_score_text.get_width()/2, 200))
+            self.display.blit(high_score_text, (self.w/2 - high_score_text.get_width()/2, 200))
             for i, score in enumerate(self.scores[:5]):
-                score_text = font.render(
-                    f"{i+1}. {score['score']} ({score['time']} sec)",
-                    True, WHITE
-                )
-                self.display.blit(score_text,
-                                  (self.w/2 - score_text.get_width()/2,
-                                   230 + i*30))
+                score_text = font.render(f"{i+1}. {score['score']} ({score['time']} sec)", True, WHITE)
+                self.display.blit(score_text, (self.w/2 - score_text.get_width()/2, 230 + i*30))
 
         mouse_pos = pygame.mouse.get_pos()
         self.retry_button.update(mouse_pos)
@@ -260,24 +231,13 @@ class SnakeGame:
             pygame.draw.line(self.display, BLACK, (0, y), (self.w, y))
 
         for point in self.snake:
-            pygame.draw.rect(self.display,
-                             BLUE,
-                             pygame.Rect(point.x, point.y,
-                                         BLOCK_SIZE, BLOCK_SIZE))
-            pygame.draw.rect(self.display,
-                             BLUE_LIGHT,
-                             pygame.Rect(point.x+4, point.y+4, 12, 12))
+            pygame.draw.rect(self.display, BLUE, pygame.Rect(point.x, point.y, BLOCK_SIZE, BLOCK_SIZE))
+            pygame.draw.rect(self.display, BLUE_LIGHT, pygame.Rect(point.x+4, point.y+4, 12, 12))
 
         for apple in self.green_apples:
-            pygame.draw.rect(self.display,
-                             GREEN,
-                             pygame.Rect(apple.x, apple.y,
-                                         BLOCK_SIZE, BLOCK_SIZE))
+            pygame.draw.rect(self.display, GREEN, pygame.Rect(apple.x, apple.y, BLOCK_SIZE, BLOCK_SIZE))
 
-        pygame.draw.rect(self.display,
-                         RED,
-                         pygame.Rect(self.red_apple.x, self.red_apple.y,
-                                     BLOCK_SIZE, BLOCK_SIZE))
+        pygame.draw.rect(self.display, RED, pygame.Rect(self.red_apple.x, self.red_apple.y, BLOCK_SIZE, BLOCK_SIZE))
 
         font = pygame.font.Font(None, 30)
         text = font.render("Score: " + str(self.score), True, WHITE)
@@ -297,13 +257,11 @@ class SnakeGame:
             y += BLOCK_SIZE
         self.head = Point(x, y)
 
-
 def main():
     game = SnakeGame()
 
     while True:
         game.play_step()
-
 
 if __name__ == "__main__":
     main()

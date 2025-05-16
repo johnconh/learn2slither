@@ -9,25 +9,30 @@ import matplotlib.pyplot as plt
 
 
 def pth_file(value):
+    """
+    Custom type for file paths.
+    """
     if not value.endswith('.pth'):
-        raise argparse.ArgumentTypeError(
-            f"Invalid file name: {value}. Must end with .pth")
+        raise argparse.ArgumentTypeError(f"Invalid file name: {value}. Must end with .pth")
     return value
 
-
 def positive_int(value):
+    """
+    Custom type for positive integers.
+    """
     ivalue = int(value)
     if ivalue <= 0:
-        raise argparse.ArgumentTypeError(
-            f"{value} is not a positive integer")
+        raise argparse.ArgumentTypeError(f"{value} is not a positive integer")
     return ivalue
 
 
 def board_size_type(value):
+    """
+    Custom type for board size.
+    """
     ivalue = int(value)
     if ivalue < 10 or ivalue > 42:
-        raise argparse.ArgumentTypeError(
-            f"{value} is not a valid board size")
+        raise argparse.ArgumentTypeError(f"{value} is not a valid board size")
     return ivalue
 
 
@@ -87,11 +92,10 @@ def parse_args():
     )
     return parser.parse_args()
 
-
 def run_game(args):
     game = Snake(args.board_size, args.visual, args.step_by_step, args.speed)
     agent = Agent()
-    plot_scores = []
+    plot_scores = []  
     plot_mean_scores = []
     total_score = 0
     record = 0
@@ -107,16 +111,13 @@ def run_game(args):
     try:
         while session > 0:
             state_old = agent.get_state(game)
-            final_move = agent.get_action(
-                state_old, args.sessions, args.dontlearn)
+            final_move = agent.get_action(state_old, args.sessions ,args.dontlearn)
             reward, done, score = game.play_step(final_move)
             state_new = agent.get_state(game)
 
             if not args.dontlearn:
-                agent.train_short_memory(
-                    state_old, final_move, reward, state_new, done)
-                agent.remenber(
-                    state_old, final_move, reward, state_new, done)
+                agent.train_short_memory(state_old, final_move, reward, state_new, done)
+                agent.remenber(state_old, final_move, reward, state_new, done)
             if done:
                 session -= 1
                 game.reset()
@@ -143,7 +144,6 @@ def run_game(args):
         pygame.quit()
         plt.close('all')
 
-
 def main():
     args = parse_args()
 
@@ -152,7 +152,6 @@ def main():
         return
     else:
         run_game(args)
-
 
 if __name__ == "__main__":
     main()

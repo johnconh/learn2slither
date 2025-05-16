@@ -7,29 +7,24 @@ import numpy as np
 pygame.init()
 font = pygame.font.Font(None, 30)
 
-
 class Direction(Enum):
     RIGHT = 1
     LEFT = 2
     UP = 3
     DOWN = 4
-
-
+    
 Point = namedtuple('Point', 'x, y')
 
-
 WHITE = (255, 255, 255)
-RED = (200, 0, 0)
+RED = (200,0,0)
 BLUE1 = (0, 0, 255)
 BLUE2 = (0, 100, 255)
-BLACK = (0, 0, 0)
-GREEN = (0, 255, 0)
-
+BLACK = (0,0,0)
+GREEN = (0,255,0)
 
 class FoodType(Enum):
     GREEN = 1
     RED = 2
-
 
 class Snake:
     def __init__(self, board_size, visual, step_by_step, speed):
@@ -51,21 +46,21 @@ class Snake:
 
     def reset(self):
         self.direction = Direction.RIGHT
+        
         self.head = Point(self.w/2, self.h/2)
-        self.snake = [self.head,
+        self.snake = [self.head, 
                       Point(self.head.x-self.block_size, self.head.y),
                       Point(self.head.x-(2*self.block_size), self.head.y)]
+
         self.score = 0
         self.foods = []
         self._place_foods()
         self.frame_iteration = 0
 
     def _place_foods(self):
-        green_count = sum(
-            1 for _, food_type in self.foods if food_type == FoodType.GREEN)
-        red_count = sum(
-            1 for _, food_type in self.foods if food_type == FoodType.RED)
-
+        green_count = sum(1 for _, food_type in self.foods if food_type == FoodType.GREEN)
+        red_count = sum(1 for _, food_type in self.foods if food_type == FoodType.RED)
+        
         for _ in range(2 - green_count):
             self._place_food(FoodType.GREEN)
         if red_count < 1:
@@ -73,18 +68,11 @@ class Snake:
 
     def _place_food(self, food_type):
         while True:
-            x = random.randint(
-                0, ((self.w - self.block_size) // self.block_size)
-                * self.block_size)
-            y = random.randint(
-                0, ((self.h - self.block_size) // self.block_size)
-                * self.block_size)
+            x = random.randint(0, (self.w - self.block_size) // self.block_size) * self.block_size
+            y = random.randint(0, (self.h - self.block_size) // self.block_size) * self.block_size
             food_point = Point(x, y)
 
-            if (
-                food_point in self.snake or
-                any(fp == food_point for fp, _ in self.foods)
-            ):
+            if food_point in self.snake or any(fp == food_point for fp, _ in self.foods):
                 continue
             else:
                 self.foods.append((food_point, food_type))
@@ -118,7 +106,7 @@ class Snake:
         game_over = False
 
         if old_distance > new_distance:
-            reward += 1
+            reward +=1
         else:
             reward -= 1
 
@@ -150,6 +138,7 @@ class Snake:
         if not food_eaten:
             self.snake.pop()
 
+
         if self.step_by_step:
             pause = True
             while pause:
@@ -165,9 +154,7 @@ class Snake:
     def is_collision(self, pt=None):
         if pt is None:
             pt = self.head
-        if pt.x > (self.w - self.block_size or pt.x < 0
-                   or pt.y >
-                   self.h - self.block_size or pt.y < 0):
+        if pt.x > self.w - self.block_size or pt.x < 0 or pt.y > self.h - self.block_size or pt.y < 0:
             return True
         if pt in self.snake[1:]:
             return True
@@ -176,41 +163,24 @@ class Snake:
 
     def _update_ui(self):
         self.display.fill(BLACK)
-
+        
         for pt in self.snake:
-            pygame.draw.rect(self.display,
-                             BLUE1,
-                             pygame.Rect(pt.x,
-                                         pt.y,
-                                         self.block_size,
-                                         self.block_size))
+            pygame.draw.rect(self.display, BLUE1, pygame.Rect(pt.x, pt.y, self.block_size, self.block_size))
             inner_size = self.block_size * 0.6
             offset = (self.block_size - inner_size) / 2
-            pygame.draw.rect(self.display,
-                             BLUE2,
-                             pygame.Rect(pt.x + offset,
-                                         pt.y + offset,
-                                         inner_size, inner_size))
-
+            pygame.draw.rect(self.display, BLUE2, pygame.Rect(pt.x + offset, pt.y + offset, inner_size, inner_size))
+            
         for food_point, food_type in self.foods:
             color = GREEN if food_type == FoodType.GREEN else RED
-            pygame.draw.rect(self.display,
-                             color,
-                             pygame.Rect(food_point.x,
-                                         food_point.y,
-                                         self.block_size,
-                                         self.block_size))
-
+            pygame.draw.rect(self.display, color, pygame.Rect(food_point.x, food_point.y, self.block_size, self.block_size))
+        
         text = font.render("Score: " + str(self.score), True, WHITE)
         self.display.blit(text, [0, 0])
         pygame.display.flip()
 
     def _move(self, action):
 
-        clock_wise = [Direction.RIGHT,
-                      Direction.DOWN,
-                      Direction.LEFT,
-                      Direction.UP]
+        clock_wise = [Direction.RIGHT, Direction.DOWN, Direction.LEFT, Direction.UP]
         idx = clock_wise.index(self.direction)
 
         if np.array_equal(action, [1, 0, 0]):
@@ -237,13 +207,13 @@ class Snake:
             y += self.block_size
         elif self.direction == Direction.UP:
             y -= self.block_size
-
+            
         self.head = Point(x, y)
-
+    
     def _get_snake_vision(self):
-        head_x, head_y = (int(self.head.x // self.block_size),
-                          int(self.head.y // self.block_size))
 
+        head_x, head_y = int(self.head.x // self.block_size), int(self.head.y // self.block_size)
+        
         directions = {
             "up": (0, -1),
             "down": (0, 1),
@@ -251,8 +221,7 @@ class Snake:
             "right": (1, 0)
         }
 
-        vision = [[" " for _ in range(self.num_cells + 2)]
-                  for _ in range(self.num_cells + 2)]
+        vision = [[" " for _ in range(self.num_cells + 2)] for _ in range(self.num_cells + 2)]
         vision[head_y + 1][head_x + 1] = "H"
 
         for direction, (dx, dy) in directions.items():
@@ -262,36 +231,23 @@ class Snake:
                 y += dy
 
                 vis_x, vis_y = x + 1, y + 1
-                if (
-                    vis_x < 0 or vis_x >= len(vision[0])
-                    or vis_y < 0 or vis_y >= len(vision)
-                ):
+                if vis_x < 0 or vis_x >= len(vision[0]) or vis_y < 0 or vis_y >= len(vision):
                     break
 
-                if (
-                    x < 0 or x >= self.num_cells
-                    or y < 0 or y >= self.num_cells
-                ):
+                if x < 0 or x >= self.num_cells or y < 0 or y >= self.num_cells:
                     vision[vis_y][vis_x] = "W"
                     break
-                elif (
-                      Point(x * self.block_size, y * self.block_size)
-                      in self.snake
-                ):
+                elif Point(x * self.block_size, y * self.block_size) in self.snake:
                     vision[vis_y][vis_x] = "S"
                 else:
                     vision[vis_y][vis_x] = "0"
 
                 for food_point, food_type in self.foods:
-                    if (
-                        food_point.x //
-                        self.block_size == x
-                        and food_point.y // self.block_size == y
-                    ):
-                        vision[vis_y][vis_x] = (
-                            "G" if food_type == FoodType.GREEN else "R"
-                        )
+                    if food_point.x // self.block_size == x and food_point.y // self.block_size == y:
+                        vision[vis_y][vis_x] = "G" if food_type == FoodType.GREEN else "R"
 
         for row in vision:
             print(" ".join(row))
         print("\n")
+
+
