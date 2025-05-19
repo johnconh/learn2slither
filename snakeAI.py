@@ -156,14 +156,16 @@ class Snake:
 
         if self.step_by_step:
             pause = True
-            while pause:
-                for event in pygame.event.get():
-                    if event.type == pygame.KEYDOWN:
-                        pause = False
-                    elif event.type == pygame.QUIT:
-                        pygame.quit()
-                        quit()
-
+            if self.visual:
+                while pause:
+                    for event in pygame.event.get():
+                        if event.type == pygame.KEYDOWN:
+                            pause = False
+                        elif event.type == pygame.QUIT:
+                            pygame.quit()
+                            quit()
+            else:
+                input("Press Enter to continue...")
         return reward, game_over, self.score
 
     def is_collision(self, pt=None):
@@ -208,7 +210,6 @@ class Snake:
         pygame.display.flip()
 
     def _move(self, action):
-
         clock_wise = [Direction.RIGHT, Direction.DOWN,
                       Direction.LEFT, Direction.UP]
         idx = clock_wise.index(self.direction)
