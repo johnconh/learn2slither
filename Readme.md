@@ -12,6 +12,7 @@ Este proyecto es una implementación de una **IA para el clásico juego de Snake
   - Comida verde (+1 punto, +1 tamaño)
   - Comida roja (−1 punto, −1 tamaño)
 - 🎮 Se puede jugar al Snake con las teclas de direcciones
+  - Guarda las 5 mejores puntuaciones del juego en un json
 - 👁️ Modo visual (`-visual on/off`)
 - ⏸️ Modo paso a paso (`-step-by-step`)
 - 🖼️ Interfaz de configuración opcional con GUI (`-game`)
