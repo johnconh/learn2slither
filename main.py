@@ -125,7 +125,7 @@ def run_game(args):
             if not args.dontlearn:
                 agent.train_short_memory(
                     state_old, final_move, reward, state_new, done)
-                agent.remenber(state_old, final_move, reward, state_new, done)
+                agent.remember(state_old, final_move, reward, state_new, done)
             if done:
                 session -= 1
                 game.reset()
