@@ -45,7 +45,7 @@ def parse_args():
     parser = argparse.ArgumentParser(description="Learn2Slither")
     parser.add_argument(
         "-sessions",
-        type=int,
+        type=positive_int,
         default=10,
         help="Number training session",
     )
