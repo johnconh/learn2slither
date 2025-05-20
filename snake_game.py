@@ -102,7 +102,10 @@ class SnakeGame:
 
     def reset(self):
         self.direction = Direction.RIGHT
-        self.head = Point(self.w/2, self.h/2)
+        self.head = Point(
+            (self.w // 2) // self.block_size * self.block_size,
+            (self.h // 2) // self.block_size * self.block_size
+        )
         self.snake = [self.head,
                       Point(self.head.x-BLOCK_SIZE, self.head.y),
                       Point(self.head.x-(2*BLOCK_SIZE), self.head.y)]
