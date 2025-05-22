@@ -116,11 +116,11 @@ def run_game(args):
             return
     try:
         while session > 0:
-            state_old = agent.get_state(game)
+            state_old = game.get_state()
             final_move = agent.get_action(
                 state_old, args.sessions, args.dontlearn)
             reward, done, score = game.play_step(final_move)
-            state_new = agent.get_state(game)
+            state_new = game.get_state()
 
             if not args.dontlearn:
                 agent.train_short_memory(

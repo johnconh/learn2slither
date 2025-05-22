@@ -1,8 +1,6 @@
 import torch
 import random
-import numpy as np
 from collections import deque
-from snakeAI import Direction, Point, FoodType
 from model import QNet, QTrainer
 
 
@@ -25,81 +23,6 @@ class Agent:
         self.memory = deque(maxlen=MAX_MEMORY)
         self.model = QNet(15, 512, 3)
         self.trainer = QTrainer(self.model, lr=LR, gamma=self.gamma)
-
-    def get_state(self, game):
-        """
-        Converts the current game state into
-        a feature vector for the neural network.
-
-        Args:
-            game: The Snake game environment instance
-        Returns:
-            numpy.array: A binary feature vector (15 elements) representing:
-                - Danger detection (straight, right, left) - 3 elements
-                - Current direction (left, right, up, down) - 4 elements
-                - Food direction relative to head (green apple) - 4 elements
-                - Food direction relative to head (red apple) - 4 elements
-
-        The agent can only use information visible
-        from the snake's head position.
-        """
-        head = game.snake[0]
-        block_size = game.block_size
-        point_l = Point(head.x - block_size, head.y)
-        point_r = Point(head.x + block_size, head.y)
-        point_u = Point(head.x, head.y - block_size)
-        point_d = Point(head.x, head.y + block_size)
-
-        dir_l = game.direction == Direction.LEFT
-        dir_r = game.direction == Direction.RIGHT
-        dir_u = game.direction == Direction.UP
-        dir_d = game.direction == Direction.DOWN
-
-        green_foods = [food for food, food_type in game.foods
-                       if food_type == FoodType.GREEN]
-        red_foods = [food for food, food_type in game.foods
-                     if food_type == FoodType.RED]
-
-        def manhattan(p1, p2):
-            """Calculate Manhattan distance between two points."""
-            return abs(p1.x - p2.x) + abs(p1.y - p2.y)
-
-        closest_green = (min(green_foods, key=lambda f: manhattan(head, f))
-                         if green_foods else Point(0, 0))
-        red_food = red_foods[0] if red_foods else Point(0, 0)
-
-        state = [
-            (dir_r and game.is_collision(point_r)) or
-            (dir_l and game.is_collision(point_l)) or
-            (dir_u and game.is_collision(point_u)) or
-            (dir_d and game.is_collision(point_d)),
-
-            (dir_u and game.is_collision(point_r)) or
-            (dir_d and game.is_collision(point_l)) or
-            (dir_l and game.is_collision(point_u)) or
-            (dir_r and game.is_collision(point_d)),
-
-            (dir_d and game.is_collision(point_r)) or
-            (dir_u and game.is_collision(point_l)) or
-            (dir_r and game.is_collision(point_u)) or
-            (dir_l and game.is_collision(point_d)),
-
-            dir_l,
-            dir_r,
-            dir_u,
-            dir_d,
-
-            closest_green.x < head.x,
-            closest_green.x > head.x,
-            closest_green.y < head.y,
-            closest_green.y > head.y,
-
-            red_food.x < head.x,
-            red_food.x > head.x,
-            red_food.y < head.y,
-            red_food.y > head.y,
-        ]
-        return np.array(state, dtype=int)
 
     def remember(self, state, action, reward, next_state, done):
         """

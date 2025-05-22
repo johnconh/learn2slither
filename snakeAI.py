@@ -308,3 +308,80 @@ class Snake:
         for row in vision:
             print(" ".join(row))
         print("\n")
+
+    def get_state(self):
+        """
+        Converts the current game state into
+        a feature vector for the neural network.
+
+        Args:
+            game: The Snake game environment instance
+        Returns:
+            numpy.array: A binary feature vector (15 elements) representing:
+                - Danger detection (straight, right, left) - 3 elements
+                - Current direction (left, right, up, down) - 4 elements
+                - Food direction relative to head (green apple) - 4 elements
+                - Food direction relative to head (red apple) - 4 elements
+
+        The agent can only use information visible
+        from the snake's head position.
+        """
+        point_l = Point(self.head.x - self.block_size, self.head.y)
+        point_r = Point(self.head.x + self.block_size, self.head.y)
+        point_u = Point(self.head.x, self.head.y - self.block_size)
+        point_d = Point(self.head.x, self.head.y + self.block_size)
+
+        dir_l = self.direction == Direction.LEFT
+        dir_r = self.direction == Direction.RIGHT
+        dir_u = self.direction == Direction.UP
+        dir_d = self.direction == Direction.DOWN
+
+        green_foods = [food for food, food_type in self.foods
+                       if food_type == FoodType.GREEN]
+        red_foods = [food for food, food_type in self.foods
+                     if food_type == FoodType.RED]
+
+        def manhattan(p1, p2):
+            """Calculate Manhattan distance between two points."""
+            return abs(p1.x - p2.x) + abs(p1.y - p2.y)
+
+        closest_green = (
+            min(green_foods, key=lambda f: manhattan(self.head, f))
+            if green_foods else Point(0, 0)
+        )
+        red_food = red_foods[0] if red_foods else Point(0, 0)
+
+        state = [
+            (dir_r and self.is_collision(point_r)) or
+            (dir_l and self.is_collision(point_l)) or
+            (dir_u and self.is_collision(point_u)) or
+            (dir_d and self.is_collision(point_d)),
+
+            (dir_u and self.is_collision(point_r)) or
+            (dir_d and self.is_collision(point_l)) or
+            (dir_l and self.is_collision(point_u)) or
+            (dir_r and self.is_collision(point_d)),
+
+            (dir_d and self.is_collision(point_r)) or
+            (dir_u and self.is_collision(point_l)) or
+            (dir_r and self.is_collision(point_u)) or
+            (dir_l and self.is_collision(point_d)),
+
+            dir_l,
+            dir_r,
+            dir_u,
+            dir_d,
+
+            closest_green.x < self.head.x,
+            closest_green.x > self.head.x,
+            closest_green.y < self.head.y,
+            closest_green.y > self.head.y,
+
+            red_food.x < self.head.x,
+            red_food.x > self.head.x,
+            red_food.y < self.head.y,
+            red_food.y > self.head.y,
+        ]
+
+        state_array = np.array(state, dtype=int)
+        return state_array
