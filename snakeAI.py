@@ -314,8 +314,6 @@ class Snake:
         Converts the current game state into
         a feature vector for the neural network.
 
-        Args:
-            game: The Snake game environment instance
         Returns:
             numpy.array: A binary feature vector (15 elements) representing:
                 - Danger detection (straight, right, left) - 3 elements
