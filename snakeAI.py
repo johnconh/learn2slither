@@ -52,8 +52,14 @@ class Snake:
     def reset(self):
         self.direction = Direction.RIGHT
         self.head = Point(
-            (self.w // 2) // self.block_size * self.block_size,
-            (self.h // 2) // self.block_size * self.block_size
+            random.randint(
+                0,
+                (self.w - self.block_size) // self.block_size
+            ) * self.block_size,
+            random.randint(
+                0,
+                (self.h - self.block_size) // self.block_size
+            ) * self.block_size
         )
         self.snake = [self.head,
                       Point(self.head.x-self.block_size, self.head.y),
