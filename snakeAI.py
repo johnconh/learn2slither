@@ -269,7 +269,7 @@ class Snake:
         ]
         vision[head_y + 1][head_x + 1] = "H"
 
-        for (dx, dy) in directions.items():
+        for (dx, dy) in directions.values():
             x, y = head_x, head_y
             while True:
                 x += dx
