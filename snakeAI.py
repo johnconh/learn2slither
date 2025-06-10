@@ -103,11 +103,39 @@ class Snake:
                 self.foods.append((food_point, food_type))
                 break
 
-    def _distance_to_closest_green(self, head):
-        green_foods = [p for p, t in self.foods if t == FoodType.GREEN]
-        if not green_foods:
-            return 0
-        return min(abs(head.x - f.x) + abs(head.y - f.y) for f in green_foods)
+    def _distance_to_visible_green(self, head):
+        head_x = head.x // self.block_size
+        head_y = head.y // self.block_size
+        min_distance = None
+
+        for dx, dy in [
+            (0, -1), (0, 1), (-1, 0), (1, 0)
+        ]:
+            x, y = head_x, head_y
+            distance = 0
+            while True:
+                x += dx
+                y += dy
+                distance += 1
+                if (
+                    x < 0 or x >= self.num_cells or
+                    y < 0 or y >= self.num_cells
+                ):
+                    break
+                if Point(
+                    x * self.block_size, y * self.block_size
+                ) in self.snake:
+                    break
+                for food_point, food_type in self.foods:
+                    if (
+                        food_type == FoodType.GREEN and
+                        food_point.x // self.block_size == x and
+                        food_point.y // self.block_size == y
+                    ):
+                        if min_distance is None or distance < min_distance:
+                            min_distance = distance
+                        break
+        return min_distance
 
     def play_step(self, action):
         self.frame_iteration += 1
@@ -123,17 +151,18 @@ class Snake:
                 pygame.quit()
                 quit()
 
-        old_distance = self._distance_to_closest_green(self.head)
+        old_distance = self._distance_to_visible_green(self.head)
         self._move(action)
         self.snake.insert(0, self.head)
-        new_distance = self._distance_to_closest_green(self.head)
+        new_distance = self._distance_to_visible_green(self.head)
         reward = 0
         game_over = False
 
-        if old_distance > new_distance:
-            reward += 1
-        else:
-            reward -= 1
+        if old_distance is not None and new_distance is not None:
+            if old_distance > new_distance:
+                reward += 1
+            else:
+                reward -= 1
 
         if self.is_collision() or self.frame_iteration > 100*len(self.snake):
             game_over = True
@@ -315,9 +344,10 @@ class Snake:
         a feature vector for the neural network.
 
         Returns:
-            numpy.array: A binary feature vector (15 elements) representing:
+            numpy.array: A binary feature vector (19 elements) representing:
                 - Danger detection (straight, right, left) - 3 elements
                 - Current direction (left, right, up, down) - 4 elements
+                - Food direction relative to head (green apple) - 4 elements
                 - Food direction relative to head (green apple) - 4 elements
                 - Food direction relative to head (red apple) - 4 elements
 
@@ -334,20 +364,57 @@ class Snake:
         dir_u = self.direction == Direction.UP
         dir_d = self.direction == Direction.DOWN
 
-        green_foods = [food for food, food_type in self.foods
-                       if food_type == FoodType.GREEN]
-        red_foods = [food for food, food_type in self.foods
-                     if food_type == FoodType.RED]
+        def visible_green_food():
+            visible_greens = []
+            for dx, dy in [(0, -1), (0, 1), (-1, 0), (1, 0)]:
+                x, y = self.head.x, self.head.y
+                while True:
+                    x += dx * self.block_size
+                    y += dy * self.block_size
+                    if (
+                        x < 0 or x >= self.w or
+                        y < 0 or y >= self.h
+                    ):
+                        break
+                    for food_point, food_type in self.foods:
+                        if (
+                            food_type == FoodType.GREEN and
+                            food_point.x == x and food_point.y == y
+                        ):
+                            visible_greens.append(food_point)
+                            break
+                    if len(visible_greens) == 2:
+                        return visible_greens
+            return visible_greens
 
-        def manhattan(p1, p2):
-            """Calculate Manhattan distance between two points."""
-            return abs(p1.x - p2.x) + abs(p1.y - p2.y)
+        def visible_red_food():
+            for dx, dy in [(0, -1), (0, 1), (-1, 0), (1, 0)]:
+                x, y = self.head.x, self.head.y
+                while True:
+                    x += dx * self.block_size
+                    y += dy * self.block_size
+                    if (
+                        x < 0 or x >= self.w or
+                        y < 0 or y >= self.h
+                    ):
+                        break
+                    for food_point, food_type in self.foods:
+                        if (
+                            food_type == FoodType.RED and
+                            food_point.x == x and food_point.y == y
+                        ):
+                            return food_point
+            return None
 
-        closest_green = (
-            min(green_foods, key=lambda f: manhattan(self.head, f))
-            if green_foods else Point(0, 0)
-        )
-        red_food = red_foods[0] if red_foods else Point(0, 0)
+        green_apples = visible_green_food()
+        red_food = visible_red_food()
+        fallback = Point(self.head.x, self.head.y)
+
+        if len(green_apples) < 2:
+            green_apples += [fallback] * (2 - len(green_apples))
+
+        green_apple1, green_apple2 = green_apples
+        red_apple = red_food if red_food else fallback
 
         state = [
             (dir_r and self.is_collision(point_r)) or
@@ -370,16 +437,20 @@ class Snake:
             dir_u,
             dir_d,
 
-            closest_green.x < self.head.x,
-            closest_green.x > self.head.x,
-            closest_green.y < self.head.y,
-            closest_green.y > self.head.y,
+            green_apple1.x < self.head.x,
+            green_apple1.x > self.head.x,
+            green_apple1.y < self.head.y,
+            green_apple1.y > self.head.y,
 
-            red_food.x < self.head.x,
-            red_food.x > self.head.x,
-            red_food.y < self.head.y,
-            red_food.y > self.head.y,
+            green_apple2.x < self.head.x,
+            green_apple2.x > self.head.x,
+            green_apple2.y < self.head.y,
+            green_apple2.y > self.head.y,
+
+            red_apple.x < self.head.x,
+            red_apple.x > self.head.x,
+            red_apple.y < self.head.y,
+            red_apple.y > self.head.y,
         ]
-
         state_array = np.array(state, dtype=int)
         return state_array
