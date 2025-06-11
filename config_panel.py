@@ -75,7 +75,7 @@ def launch_config_panel(run_game_callback, args=None):
         return True
 
     def validate_board_size(value):
-        if value < 10 or value > 42:
+        if value < 7 or value > 42:
             messagebox.showerror(
                 "Input Error",
                 "Board size must be between 10 and 42"

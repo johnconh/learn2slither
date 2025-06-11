@@ -36,7 +36,7 @@ def board_size_type(value):
     Custom type for board size.
     """
     ivalue = int(value)
-    if ivalue < 10 or ivalue > 42:
+    if ivalue < 7 or ivalue > 42:
         raise argparse.ArgumentTypeError(f"{value} is not a valid board size")
     return ivalue
 
@@ -81,7 +81,7 @@ def parse_args():
     parser.add_argument(
         "-board-size",
         type=board_size_type,
-        default=20,
+        default=10,
         help="Size of the board",
     )
     parser.add_argument(

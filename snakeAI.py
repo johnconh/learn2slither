@@ -51,9 +51,10 @@ class Snake:
 
     def reset(self):
         self.direction = Direction.RIGHT
+        min_x = 2 * self.block_size
         self.head = Point(
             random.randint(
-                0,
+                min_x // self.block_size,
                 (self.w - self.block_size) // self.block_size
             ) * self.block_size,
             random.randint(
@@ -448,4 +449,18 @@ class Snake:
             red_apple.y > self.head.y,
         ]
         state_array = np.array(state, dtype=int)
+        # state_label = [
+        #     "Danger Straight", "Danger Right", "Danger Left",
+        #     "Direction Left", "Direction Right", "Direction Up",
+        #     "Direction Down",
+        #     "Green Apple 1 Left", "Green Apple 1 Right",
+        #     "Green Apple 1 Up", "Green Apple 1 Down",
+        #     "Green Apple 2 Left", "Green Apple 2 Right",
+        #     "Green Apple 2 Up", "Green Apple 2 Down",
+        #     "Red Apple Left", "Red Apple Right",
+        #     "Red Apple Up", "Red Apple Down"
+        # ]
+        # print("State Vector:")
+        # for label, value in zip(state_label, state_array):
+        #     print(f"{label}: {value}")
         return state_array
