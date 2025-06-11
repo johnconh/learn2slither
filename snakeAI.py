@@ -366,44 +366,39 @@ class Snake:
 
         def visible_green_food():
             visible_greens = []
-            for dx, dy in [(0, -1), (0, 1), (-1, 0), (1, 0)]:
-                x, y = self.head.x, self.head.y
-                while True:
-                    x += dx * self.block_size
-                    y += dy * self.block_size
-                    if (
-                        x < 0 or x >= self.w or
-                        y < 0 or y >= self.h
-                    ):
-                        break
-                    for food_point, food_type in self.foods:
-                        if (
-                            food_type == FoodType.GREEN and
-                            food_point.x == x and food_point.y == y
-                        ):
-                            visible_greens.append(food_point)
-                            break
+            head_x = self.head.x // self.block_size
+            head_y = self.head.y // self.block_size
+
+            green_foods = [
+                food_point for food_point, food_type in self.foods
+                if food_type == FoodType.GREEN
+            ]
+
+            for food_point in green_foods:
+                food_x = food_point.x // self.block_size
+                food_y = food_point.y // self.block_size
+
+                if head_x == food_x or head_y == food_y:
+                    visible_greens.append(food_point)
                     if len(visible_greens) == 2:
-                        return visible_greens
+                        break
             return visible_greens
 
         def visible_red_food():
-            for dx, dy in [(0, -1), (0, 1), (-1, 0), (1, 0)]:
-                x, y = self.head.x, self.head.y
-                while True:
-                    x += dx * self.block_size
-                    y += dy * self.block_size
-                    if (
-                        x < 0 or x >= self.w or
-                        y < 0 or y >= self.h
-                    ):
-                        break
-                    for food_point, food_type in self.foods:
-                        if (
-                            food_type == FoodType.RED and
-                            food_point.x == x and food_point.y == y
-                        ):
-                            return food_point
+            head_x = self.head.x // self.block_size
+            head_y = self.head.y // self.block_size
+
+            red_food = [
+                food_point for food_point, food_type in self.foods
+                if food_type == FoodType.RED
+            ]
+
+            for food_point in red_food:
+                food_x = food_point.x // self.block_size
+                food_y = food_point.y // self.block_size
+
+                if head_x == food_x or head_y == food_y:
+                    return food_point
             return None
 
         green_apples = visible_green_food()
