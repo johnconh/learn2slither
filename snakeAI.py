@@ -190,7 +190,7 @@ class Snake:
                 self._place_food(food_type)
                 break
 
-        if not food_eaten:
+        if not food_eaten or food_type == FoodType.RED:
             self.snake.pop()
 
         if self.step_by_step:

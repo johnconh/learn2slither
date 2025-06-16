@@ -6,7 +6,8 @@ from plot import plot
 from config_panel import launch_config_panel
 import pygame
 import matplotlib.pyplot as plt
-
+from tkinter import messagebox
+import traceback
 
 def pth_file(value):
     """
@@ -164,4 +165,7 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except Exception as e:
+        print(f"An error occurred: {e}")

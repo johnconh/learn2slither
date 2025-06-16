@@ -89,7 +89,11 @@ def launch_config_panel(run_game_callback, args=None):
         if not value and required:
             messagebox.showerror("Input Error", "File path is required")
             return False
-        if not value.endswith('.pth'):
+        file_name = os.path.basename(value)
+        if file_name in [".pth", "/.pth"]:
+            messagebox.showerror("Input Error", f"Invalid file path: '{value}'")
+            return False
+        if not file_name.endswith('.pth'):
             messagebox.showerror(
                 "Input Error", "File must have .pth extension"
             )
@@ -227,8 +231,10 @@ def launch_config_panel(run_game_callback, args=None):
             speed=speed_var.get(),
             game=False
         )
+
         root.destroy()
         run_game_callback(args)
+
 
     start_ai_button = ttk.Button(
         main_frame, text="Start AI Game",
