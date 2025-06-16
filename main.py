@@ -6,8 +6,7 @@ from plot import plot
 from config_panel import launch_config_panel
 import pygame
 import matplotlib.pyplot as plt
-from tkinter import messagebox
-import traceback
+
 
 def pth_file(value):
     """
