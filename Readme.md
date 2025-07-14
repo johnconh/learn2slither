@@ -27,7 +27,7 @@ Este proyecto es una implementación de una **IA para el clásico juego de Snake
 ├── snakeAI.py          # Lógica del juego Snake
 ├── agent.py            # IA basada en DQN
 ├── model.py            # Red neuronal (PyTorch)
-├── train.py            # Punto de entrada (entrenamiento/juego)
+├── main.py            # Punto de entrada (entrenamiento/juego)
 ├── config_panel.py     # GUI opcional para configuración
 ├── plot.py             # Visualización de puntuaciones
 ├── snake_game.py       # Juego de snake para jugar.
@@ -40,17 +40,17 @@ Este proyecto es una implementación de una **IA para el clásico juego de Snake
 
 ### Entrenamiento automático:
 ```bash
-python train.py -sessions 100 -visual off
+python main.py -sessions 100 -visual off
 ```
 
 ### Visualización paso a paso:
 ```bash
-python train.py -step-by-step -speed 10
+python main.py -step-by-step -speed 10
 ```
 
 ### Con GUI de configuración:
 ```bash
-python train.py -game
+python main.py -game
 ```
 
 ---
